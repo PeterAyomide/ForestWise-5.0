@@ -1496,13 +1496,14 @@ html {
 
 
     /* Enhanced mobile responsiveness for new navigation */
-    @media (max-width: 768px) {
-      .floating-orb {
-        top: 1rem;
-        left: 1rem;
-        width: 50px;
-        height: 50px;
-      }
+      @media (max-width: 768px) {
+    .floating-orb {
+        top: 0.75rem; /* Moved up slightly */
+        left: 0.75rem; /* Moved left slightly */
+        width: 40px;   /* Shrink slightly from 45px */
+        height: 40px;
+        font-size: 1.2rem;
+    }
 
       .orb-menu {
         top: 1rem;
@@ -1578,37 +1579,39 @@ html {
 
   <!-- Navigation -->
  <nav class="fixed top-0 left-0 right-0 z-50 bg-white/20 dark:bg-forest-800/30 backdrop-blur-md border-b border-white/20 dark:border-forest-600/30 transition">
-    <div class="max-w-6xl mx-auto px-8 py-5 flex justify-between items-center">
+  <div class="max-w-6xl mx-auto px-4 md:px-8 py-3 md:py-5 flex justify-between items-center">
+    
+    <a href="#" class="logo flex items-center gap-2 md:gap-3 group pl-14 md:pl-0 transition-all">
+       <img src="logo.png" alt="ForestWise" class="h-10 w-auto md:h-12 group-hover:scale-105 transition-transform">
+       <span class="text-xl md:text-2xl font-bold text-forest-800 dark:text-forest-100 hidden sm:block">ForestWise</span>
+    </a>
+
+    <div class="flex items-center space-x-1 md:space-x-4">
+      <button id="favoritesBtn" class="relative p-2 text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">
+        <i class="fas fa-heart text-lg md:text-xl"></i>
+        <span id="favoritesBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center hidden"></span>
+      </button>
       
-      <a href="#" class="logo flex items-center gap-3 group">
-         <img src="logo.png" alt="ForestWise" class="h-12 w-auto group-hover:scale-105 transition-transform">
-         <span class="text-2xl font-bold text-forest-800 dark:text-forest-100">ForestWise</span>
-      </a>
-      <div class="flex items-center space-x-4">
-        <button id="favoritesBtn" class="relative p-2 text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">
-          <i class="fas fa-heart text-xl"></i>
-          <span id="favoritesBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden"></span>
-        </button>
-        
-        <button id="shareBtn" class="p-2 text-forest-700 dark:text-forest-200 hover:text-gold-400 transition" title="Share Results">
-          <i class="fas fa-share-alt text-xl"></i>
-        </button>
-        
-        <button id="exportPdfBtn" class="p-2 text-forest-700 dark:text-forest-200 hover:text-gold-400 transition" title="Export PDF">
-          <i class="fas fa-file-pdf text-xl"></i>
-        </button>
-        
-        <div class="hidden md:flex space-x-10 text-lg font-medium">
-          <a href="#tool" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">Home</a>
-          <a href="#about" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">About</a>
-          <a href="#contact" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">Contact</a>
-        </div>
-        <button id="darkModeToggle" class="border border-white/60 text-white px-3 py-2 rounded-lg text-sm hover:bg-white hover:text-forest-900 transition">
-          <i class="fas fa-moon"></i>
-        </button>
+      <button id="shareBtn" class="p-2 text-forest-700 dark:text-forest-200 hover:text-gold-400 transition" title="Share Results">
+        <i class="fas fa-share-alt text-lg md:text-xl"></i>
+      </button>
+      
+      <button id="exportPdfBtn" class="p-2 text-forest-700 dark:text-forest-200 hover:text-gold-400 transition hidden xs:block" title="Export PDF">
+        <i class="fas fa-file-pdf text-lg md:text-xl"></i>
+      </button>
+      
+      <div class="hidden md:flex space-x-10 text-lg font-medium">
+        <a href="#tool" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">Home</a>
+        <a href="#about" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">About</a>
+        <a href="#contact" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">Contact</a>
       </div>
+
+      <button id="darkModeToggle" class="border border-white/60 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg text-sm hover:bg-white hover:text-forest-900 transition ml-2">
+        <i class="fas fa-moon"></i>
+      </button>
     </div>
-  </nav>
+  </div>
+</nav>
 
  <!-- ===== PAGES ===== -->
   <!-- Recommendation Page -->
@@ -2646,6 +2649,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
