@@ -1133,20 +1133,43 @@
     }
 
     @media (max-width: 480px) {
-      /* Extra small phones */
-      .text-3xl { font-size: 1.75rem !important; }
-      .text-4xl { font-size: 2rem !important; }
+      /* Extra small phones (Shorter breadths) */
       
-      /* Reduce padding */
-      .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
-      .py-32 { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+      /* 1. Reduce massive fonts so they don't break lines awkwardly */
+      .text-3xl { font-size: 1.5rem !important; }
+      .text-4xl { font-size: 1.75rem !important; }
+      .text-5xl { font-size: 2rem !important; }
       
-      /* Stack form elements */
+      /* 2. FIX THE "FORCED TO EDGE" ISSUE */
+      /* Instead of removing padding, we center the content with a % width */
+      section.px-6 { 
+        padding-left: 0.5rem !important; 
+        padding-right: 0.5rem !important; 
+      }
+
+      /* Force the glass cards to be 94% width and perfectly centered */
+      .glass, .max-w-6xl, .max-w-5xl, .max-w-4xl {
+        width: 94% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      
+      /* 3. Reduce internal card padding so text has more room to breathe */
+      #tool .glass, .glass {
+        padding: 1.25rem !important; 
+      }
+      
+      /* 4. Ensure headers and paragraphs are centered if they look off */
+      .text-center-mobile {
+        text-align: center !important;
+      }
+      
+      /* Stack form elements neatly */
       .grid-cols-2 { grid-template-columns: 1fr !important; }
       
-      /* Project type selector */
+      /* Fix Project Type Selector grid on very small screens */
       .project-type-selector {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
       }
     }
 
@@ -1958,7 +1981,7 @@ html {
         <!-- Site Conditions -->
         <div class="glass p-10 card-hover transition">
           <div class="flex justify-between items-center mb-8">
-            <h3 class="text-3xl font-semibold flex items-center">
+            <h3 class="text-3xl font-semibold flex items-center justify-center md:justify-start text-center-mobile">
               <i class="fas fa-map-marked-alt mr-4 text-gold-400"></i> Site Conditions
             </h3>
             <!-- Location Detection Button -->
@@ -2649,6 +2672,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
