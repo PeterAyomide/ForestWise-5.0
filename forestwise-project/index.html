@@ -1135,42 +1135,50 @@
     @media (max-width: 480px) {
       /* Extra small phones (Shorter breadths) */
       
-      /* 1. Reduce massive fonts so they don't break lines awkwardly */
+      /* 1. Resize Fonts */
       .text-3xl { font-size: 1.5rem !important; }
       .text-4xl { font-size: 1.75rem !important; }
       .text-5xl { font-size: 2rem !important; }
       
-      /* 2. FIX THE "FORCED TO EDGE" ISSUE */
-      /* Instead of removing padding, we center the content with a % width */
+      /* 2. GENERAL FIXES (Global) */
+      /* Remove side padding from sections so we can control width manually */
       section.px-6 { 
-        padding-left: 0.5rem !important; 
-        padding-right: 0.5rem !important; 
+        padding-left: 0 !important; 
+        padding-right: 0 !important; 
       }
 
-      /* Force the glass cards to be 94% width and perfectly centered */
-      .glass, .max-w-6xl, .max-w-5xl, .max-w-4xl {
-        width: 94% !important;
+      /* 3. SPECIFIC FIX FOR THE TOOL SECTION (The uneven bars) */
+      /* We make the WRAPPER 92% wide and centered. */
+      #tool .max-w-6xl, 
+      #resultsSection .max-w-6xl {
+        width: 92% !important; 
         margin-left: auto !important;
         margin-right: auto !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+
+      /* Then we tell the CARDS to just fill that space (100%) */
+      /* This removes the "double centering" math that caused the shift */
+      #tool .glass, 
+      #resultsSection .glass, 
+      .glass {
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        box-sizing: border-box !important; /* Ensures padding doesn't stretch it */
+        padding: 1.25rem !important;
       }
       
-      /* 3. Reduce internal card padding so text has more room to breathe */
-      #tool .glass, .glass {
-        padding: 1.25rem !important; 
-      }
-      
-      /* 4. Ensure headers and paragraphs are centered if they look off */
+      /* 4. Center the Headers inside the cards */
       .text-center-mobile {
         text-align: center !important;
+        justify-content: center !important;
       }
       
-      /* Stack form elements neatly */
+      /* 5. Fix Grid Layouts */
       .grid-cols-2 { grid-template-columns: 1fr !important; }
-      
-      /* Fix Project Type Selector grid on very small screens */
-      .project-type-selector {
-        grid-template-columns: 1fr !important;
-      }
+      .project-type-selector { grid-template-columns: 1fr !important; }
     }
 
     /* Better touch targets for mobile */
@@ -2672,6 +2680,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
