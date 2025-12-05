@@ -1133,50 +1133,44 @@
     }
 
     @media (max-width: 480px) {
-      /* Extra small phones (Shorter breadths) */
+      /* Extra small phones */
       
       /* 1. Resize Fonts */
       .text-3xl { font-size: 1.5rem !important; }
       .text-4xl { font-size: 1.75rem !important; }
       .text-5xl { font-size: 2rem !important; }
       
-      /* 2. GENERAL FIXES (Global) */
-      /* Remove side padding from sections so we can control width manually */
+      /* 2. THE CENTERING FIX (Padding Squeeze) */
+      /* We add equal padding on left/right to the container. */
+      /* This squeezes the cards into the middle perfectly. */
       section.px-6 { 
-        padding-left: 0 !important; 
-        padding-right: 0 !important; 
+        padding-left: 1.25rem !important; 
+        padding-right: 1.25rem !important; 
       }
 
-      /* 3. SPECIFIC FIX FOR THE TOOL SECTION (The uneven bars) */
-      /* We make the WRAPPER 92% wide and centered. */
-      #tool .max-w-6xl, 
-      #resultsSection .max-w-6xl {
-        width: 92% !important; 
-        margin-left: auto !important;
-        margin-right: auto !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-      }
-
-      /* Then we tell the CARDS to just fill that space (100%) */
-      /* This removes the "double centering" math that caused the shift */
-      #tool .glass, 
-      #resultsSection .glass, 
-      .glass {
+      /* Reset the wrapper to be normal */
+      .max-w-6xl {
         width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* 3. RESIZE THE BARS (Cards) */
+      /* Make cards fill the centered space and reduce their bulkiness */
+      .glass, #tool .glass, #resultsSection .glass {
+        width: 100% !important;
+        padding: 1.5rem !important; /* Reduced from p-10 to p-6 equivalent */
         margin-left: 0 !important;
         margin-right: 0 !important;
-        box-sizing: border-box !important; /* Ensures padding doesn't stretch it */
-        padding: 1.25rem !important;
       }
       
-      /* 4. Center the Headers inside the cards */
+      /* 4. Center Headers inside the cards */
       .text-center-mobile {
         text-align: center !important;
         justify-content: center !important;
       }
       
-      /* 5. Fix Grid Layouts */
+      /* 5. Fix Grids */
       .grid-cols-2 { grid-template-columns: 1fr !important; }
       .project-type-selector { grid-template-columns: 1fr !important; }
     }
@@ -2078,7 +2072,7 @@ html {
 
         <!-- Restoration Goals -->
         <div class="glass p-10 card-hover transition">
-          <h3 class="text-3xl font-semibold mb-8 flex items-center">
+          <h3 class="text-3xl font-semibold flex items-center justify-center md:justify-start text-center-mobile">
             <i class="fas fa-bullseye mr-4 text-gold-400"></i> Restoration Goals
           </h3>
           <div id="goalChips" class="flex flex-wrap gap-3 mb-10">
@@ -2680,6 +2674,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
