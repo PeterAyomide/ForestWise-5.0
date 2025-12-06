@@ -2946,20 +2946,33 @@ function showWikiModal(species) {
   const aiInput = document.getElementById('modal-ai-input');
   const aiSend = document.getElementById('modal-ai-send');
 
-  aiContainer.innerHTML = `<div class="bg-white p-3 rounded-lg shadow-sm text-sm self-start text-gray-700">I am Onyx. I have analyzed <b>${species['Common Name']}</b>. Query me for specifics.</div>`;
+  // 1. Create Clones to wipe old event listeners
+  const newSend = aiSend.cloneNode(true);
+  aiSend.parentNode.replaceChild(newSend, aiSend);
+  
+  const newInput = aiInput.cloneNode(true);
+  aiInput.parentNode.replaceChild(newInput, aiInput);
 
+  // 2. Define the handler
   async function handleModalQuestion() {
-    const text = aiInput.value.trim();
-    if(!text) return;
+    // CRITICAL FIX: Read from 'newInput', not the old 'aiInput'
+    const text = newInput.value.trim(); 
+    
+    if(!text) return; // This was stopping execution before because text was empty
+
+    // Create User Bubble
     const userBubble = document.createElement('div');
     userBubble.className = 'bg-gold-500 text-white p-3 rounded-lg shadow-sm text-sm self-end max-w-[85%] mb-2';
     userBubble.textContent = text;
     aiContainer.appendChild(userBubble);
-    aiInput.value = '';
+    
+    // Clear the CORRECT input
+    newInput.value = '';
     aiContainer.scrollTop = aiContainer.scrollHeight;
 
+    // Create Loading Bubble
     const loadingBubble = document.createElement('div');
-    loadingBubble.className = 'bg-white p-3 rounded-lg shadow-sm text-sm self-start text-gray-500 mb-2';
+    loadingBubble.className = 'bg-white dark:bg-gray-700 dark:text-gray-200 p-3 rounded-lg shadow-sm text-sm self-start text-gray-500 mb-2';
     loadingBubble.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Onyx is analyzing...';
     aiContainer.appendChild(loadingBubble);
     
@@ -2967,22 +2980,27 @@ function showWikiModal(species) {
       const context = `The user is asking about the tree: ${species['Species Name']} (${species['Common Name']}). Answer specifically about this tree.`;
       forestWiseAI.setContext(context);
       const response = await forestWiseAI.sendMessage(text);
-      loadingBubble.innerHTML = response;
+      
+      // Fix for Markdown (see Point 3 below)
+      if (typeof marked !== 'undefined') {
+        loadingBubble.innerHTML = marked.parse(response);
+      } else {
+        loadingBubble.innerHTML = response;
+      }
+      
       loadingBubble.classList.remove('text-gray-500');
     } catch (err) {
+      console.error(err);
       loadingBubble.textContent = "Error: Onyx disconnected.";
     }
     aiContainer.scrollTop = aiContainer.scrollHeight;
   }
 
-  const newSend = aiSend.cloneNode(true);
-  aiSend.parentNode.replaceChild(newSend, aiSend);
-  const newInput = aiInput.cloneNode(true);
-  aiInput.parentNode.replaceChild(newInput, aiInput);
-
+  // 3. Attach listeners to the NEW elements
   newSend.addEventListener('click', handleModalQuestion);
-  newInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleModalQuestion(); });
-}
+  newInput.addEventListener('keypress', (e) => { 
+    if(e.key === 'Enter') handleModalQuestion(); 
+  });
 
 // ===== NAVIGATION FUNCTIONS ONLY =====
 
@@ -3493,7 +3511,7 @@ function initEnhancedChatWidget() {
 
     try {
         const response = await forestWiseAI.sendMessage(text || "Analyze this image", fileToSend);
-        loadingDiv.innerHTML = response; 
+        loadingDiv.innerHTML = marked.parse(response); 
     } catch (err) {
         loadingDiv.innerHTML = "⚠️ Connection interrupted. Onyx could not reach the server.";
     }
@@ -3572,6 +3590,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
