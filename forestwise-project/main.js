@@ -3001,6 +3001,7 @@ function showWikiModal(species) {
   newInput.addEventListener('keypress', (e) => { 
     if(e.key === 'Enter') handleModalQuestion(); 
   });
+}
 
 // ===== NAVIGATION FUNCTIONS ONLY =====
 
@@ -3590,6 +3591,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
