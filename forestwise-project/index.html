@@ -1323,6 +1323,141 @@
   #tool .glass {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
   }
+  
+  /* 8. STRETCH SLIDESHOW FOR EXTRA SMALL PHONES */
+  #natureSlideshow .max-w-6xl.mx-auto.px-6 {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+  
+  #natureSlideshow .relative.h-96.rounded-2xl.overflow-hidden.shadow-2xl {
+    margin-left: 0.25rem !important;
+    margin-right: 0.25rem !important;
+    width: calc(100% - 0.5rem) !important;
+    border-radius: 0.75rem !important; /* Slightly smaller radius */
+  }
+  
+  /* Reduce padding inside slideshow text */
+  #natureSlideshow .p-8 {
+    padding: 1rem !important;
+  }
+  
+  /* Make slideshow text smaller to allow more image visibility */
+  #natureSlideshow h3.text-2xl {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  #natureSlideshow .text-lg {
+    font-size: 0.85rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Adjust slideshow navigation arrows */
+  #natureSlideshow .slideshow-prev,
+  #natureSlideshow .slideshow-next {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.9rem !important;
+  }
+  
+  /* Make slideshow dots smaller */
+  .slideshow-dot {
+    width: 8px !important;
+    height: 8px !important;
+  }
+}
+
+/* Even more stretching for very small phones */
+@media (max-width: 360px) {
+  #natureSlideshow .relative.h-96.rounded-2xl.overflow-hidden.shadow-2xl {
+    margin-left: 0.125rem !important;
+    margin-right: 0.125rem !important;
+    width: calc(100% - 0.25rem) !important;
+    border-radius: 0.5rem !important;
+  }
+  
+  /* Remove some horizontal padding */
+  #natureSlideshow .max-w-6xl.mx-auto.px-6 {
+    padding-left: 0.125rem !important;
+    padding-right: 0.125rem !important;
+  }
+  
+  /* Make slideshow text even more compact */
+  #natureSlideshow .p-8 {
+    padding: 0.75rem !important;
+  }
+  
+  #natureSlideshow h3.text-2xl {
+    font-size: 1rem !important;
+  }
+  
+  #natureSlideshow .text-lg {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Add a special class for very small aspect ratios */
+@media (max-width: 480px) and (max-height: 700px) {
+  #natureSlideshow .relative.h-96 {
+    height: 280px !important; /* Reduce height slightly */
+  }
+  
+  /* Make the image cover more area */
+  #natureSlideshow img {
+    object-fit: cover !important;
+    object-position: center !important;
+  }
+  
+  /* Reduce the gradient overlay to show more image */
+  #natureSlideshow .bg-gradient-to-t.from-black\/60.to-transparent {
+    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent) !important;
+  }
+}
+
+    /* Ensure slideshow images scale properly */
+.slideshow-slide img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+}
+
+/* Prevent any horizontal overflow */
+#natureSlideshow {
+  overflow: hidden !important;
+}
+
+/* Make the slideshow container itself more flexible */
+@media (max-width: 480px) {
+  #natureSlideshow {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+  
+  /* Ensure all slideshow slides take full width */
+  .slideshow-slide {
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+  
+  /* Adjust the slideshow header spacing */
+  #natureSlideshow .text-center.mb-16.scroll-reveal {
+    margin-bottom: 1.5rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  #natureSlideshow h2.text-4xl {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  #natureSlideshow .text-xl {
+    font-size: 0.9rem !important;
+    padding: 0 0.5rem !important;
+  }
 }
 
 /* Even more aggressive scaling for very small devices */
@@ -1385,6 +1520,50 @@
   #tool .glass {
     align-self: center !important;
     max-width: 95% !important;
+  }
+
+  /* Make pH scales thinner and better sized */
+  input[type="range"] {
+    height: 3px !important; /* Reduced from 6px */
+    border-radius: 2px !important;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    width: 14px !important; /* Reduced from 20px */
+    height: 14px !important;
+    border: 1.5px solid white !important; /* Thinner border */
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    width: 14px !important;
+    height: 14px !important;
+    border: 1.5px solid white !important;
+  }
+  
+  /* Adjust the pH slider container */
+  #tool .flex.items-center.space-x-4 {
+    gap: 0.5rem !important;
+  }
+  
+  /* Reduce pH labels size */
+  #tool .flex.justify-between.mt-2.text-sm {
+    font-size: 0.7rem !important;
+  }
+  
+  #pHMinLabel, #pHMaxLabel {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Even smaller for very tiny screens */
+@media (max-width: 360px) {
+  input[type="range"] {
+    height: 2px !important;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    width: 12px !important;
+    height: 12px !important;
   }
 }
 
@@ -2945,6 +3124,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
