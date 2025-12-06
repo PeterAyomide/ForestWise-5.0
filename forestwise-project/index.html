@@ -1201,6 +1201,191 @@
     font-size: 16px !important;
     padding: 0.75rem !important;
   }
+
+   /* 7. SPECIFIC FIX FOR SITE CONDITIONS & RESTORATION GOALS BARS */
+  /* Reduce the size of the glass containers in the tool section */
+  #tool .glass.p-10 {
+    padding: 1.5rem !important;
+    margin-left: 0.5rem !important;
+    margin-right: 0.5rem !important;
+    width: calc(100% - 1rem) !important;
+    transform: scale(0.98); /* Slightly scale down */
+  }
+  
+  /* Reduce font sizes inside these sections */
+  #tool .text-3xl {
+    font-size: 1.5rem !important;
+    text-align: center !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Reduce padding on form inputs */
+  #tool .form-group input,
+  #tool .form-group select,
+  #tool .form-group textarea {
+    padding: 0.75rem !important;
+    font-size: 14px !important;
+  }
+  
+  /* Make the form labels smaller */
+  #tool .form-label {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Reduce spacing between form elements */
+  #tool .space-y-8 {
+    row-gap: 1.5rem !important;
+  }
+  
+  /* Adjust the location detection button */
+  #tool .flex.justify-between.items-center.mb-8 {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    text-align: center !important;
+  }
+  
+  #detectLocationBtn {
+    font-size: 0.875rem !important;
+    padding: 0.75rem 1rem !important;
+    width: 100% !important;
+    max-width: 280px !important;
+    margin: 0 auto !important;
+  }
+  
+  /* Reduce goal chips size */
+  #goalChips {
+    gap: 0.5rem !important;
+    justify-content: center !important;
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .chip {
+    font-size: 0.75rem !important;
+    padding: 0.4rem 0.75rem !important;
+    margin: 0.125rem !important;
+  }
+  
+  /* Reduce action buttons size */
+  #tool .grid.grid-cols-2.gap-4 {
+    gap: 0.75rem !important;
+  }
+  
+  #recommendBtn,
+  #resetBtn {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+    border-radius: 1rem !important;
+  }
+  
+  #recommendBtn i,
+  #resetBtn i {
+    font-size: 0.875rem !important;
+    margin-right: 0.5rem !important;
+  }
+  
+  /* Reduce the grid gap between the two columns */
+  #tool .grid.md\\:grid-cols-2.gap-12 {
+    gap: 1.5rem !important;
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Ensure proper centering */
+  #tool .text-center-mobile {
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  
+  /* Reduce helper text size */
+  .form-helper {
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Adjust the temperature grid */
+  #tool .grid.grid-cols-2.gap-6 {
+    gap: 0.75rem !important;
+  }
+  
+  /* Specific fix for pH range sliders */
+  input[type="range"] {
+    height: 4px !important;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  /* Make the glass container shadows more subtle */
+  #tool .glass {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* Even more aggressive scaling for very small devices */
+@media (max-width: 360px) {
+  #tool .glass.p-10 {
+    padding: 1rem !important;
+    margin-left: 0.25rem !important;
+    margin-right: 0.25rem !important;
+    width: calc(100% - 0.5rem) !important;
+    transform: scale(0.95);
+  }
+  
+  #tool .text-3xl {
+    font-size: 1.25rem !important;
+  }
+  
+  #goalChips {
+    gap: 0.25rem !important;
+  }
+  
+  .chip {
+    font-size: 0.7rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+  
+  #recommendBtn,
+  #resetBtn {
+    font-size: 0.8rem !important;
+    padding: 0.6rem 0.75rem !important;
+  }
+}
+
+    /* Additional specific fixes */
+@media (max-width: 480px) {
+  /* Force proper centering of the tool section */
+  #tool {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  #tool .max-w-6xl.mx-auto {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  
+  #tool .grid.md\\:grid-cols-2 {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  
+  /* Ensure each glass card is properly centered */
+  #tool .glass {
+    align-self: center !important;
+    max-width: 95% !important;
+  }
 }
 
     /* Add this to your existing CSS */
@@ -2760,6 +2945,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
