@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SilviQ</title>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
   
@@ -920,6 +922,12 @@
       padding: 1rem;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     }
+
+    .dark .map-controls {
+    background: rgba(31, 41, 55, 0.95); /* Dark background */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e5e7eb; /* Light text */
+}
 
     /* Project Type Selector */
     .project-type-selector {
@@ -2244,6 +2252,42 @@ html {
       .modal-left { flex: none; height: auto; border-right: none; border-bottom: 1px solid #eee; overflow-y: visible; }
       .modal-right { flex: none; height: 500px; }
     } 
+
+    /* === DARK MODE CHAT FIXES === */
+
+/* Fix the Header Background and Text Color */
+.dark .chat-header {
+    background-color: #1f2937 !important; /* Dark Gray */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Fix the Message Area Background */
+.dark .chat-messages {
+    background-color: #111827 !important; /* Almost Black */
+}
+
+/* Fix the Input Area Background */
+.dark .chat-input-area {
+    background-color: #1f2937 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Fix the Input Field Wrapper */
+.dark .chat-input-wrapper {
+    background-color: #374151 !important; /* Lighter Gray for contrast */
+}
+
+/* Fix the Input Text Color */
+.dark #chatInput {
+    color: white !important;
+}
+
+/* Ensure the main box has a dark background */
+.dark #chatBox {
+    background-color: #111827 !important;
+    border: 1px solid rgba(255,255,255,0.1);
+}
   </style>
 </head>
 <body class="bg-forest-50 text-forest-800 dark:bg-forest-900 dark:text-forest-100 transition-all duration-700">
@@ -2280,10 +2324,12 @@ html {
   <div class="max-w-6xl mx-auto px-4 md:px-8 py-3 md:py-5 flex justify-between items-center">
     
     <a href="#" class="logo flex items-center gap-2 md:gap-3 group pl-14 md:pl-0 transition-all">
-       <img src="logo.png" alt="ForestWise" class="h-10 w-auto md:h-12 group-hover:scale-105 transition-transform">
-      <span class="text-xl md:text-2xl font-bold text-forest-800 dark:text-white hidden sm:block">Silvi</span>
-<span class="text-xl md:text-2xl font-bold text-gold-400 hidden sm:block">Q</span>
-    </a>
+  <img src="logo.png" alt="ForestWise" class="h-10 w-auto md:h-12 group-hover:scale-105 transition-transform">
+  <div class="flex items-center gap-0">
+    <span class="text-xl md:text-2xl font-bold text-forest-800 dark:text-white hidden sm:block">Silvi</span>
+    <span class="text-xl md:text-2xl font-bold text-gold-400 hidden sm:block">Q</span>
+  </div>
+</a>
 
     <div class="flex items-center space-x-2 md:space-x-4">
       <button id="favoritesBtn" class="relative p-2 text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">
@@ -2845,10 +2891,12 @@ html {
     <div class="flex flex-col md:flex-row justify-between items-center mb-12">
       <div class="mb-8 md:mb-0 text-center md:text-left">
         <div class="flex items-center justify-center md:justify-start gap-2 mb-2">
-          <img src="logo.png" alt="ForestWise Logo" class="h-8 w-auto">
-         <span class="text-2xl font-bold text-forest-800 dark:text-white logo-font">Silvi</span>
-<span class="text-2xl font-bold text-gold-400 logo-font">Q</span>
-        </div>
+  <img src="logo.png" alt="ForestWise Logo" class="h-8 w-auto">
+  <div class="flex items-center gap-0">
+    <span class="text-2xl font-bold text-forest-800 dark:text-white logo-font">Silvi</span>
+    <span class="text-2xl font-bold text-gold-400 logo-font">Q</span>
+  </div>
+</div>
         <p class="text-forest-500 dark:text-forest-400 text-sm">Intelligent Reforestation for Nigeria.</p>
       </div>
 
@@ -2883,7 +2931,7 @@ html {
       </div>
 
           <!-- Map Controls -->
-          <div class="map-controls mb-6">
+          <div class="map-controls mb-6 dark:bg-forest-800 dark:border dark:border-forest-600 dark:text-white">
             <div class="flex flex-wrap gap-4 items-center justify-between">
               <div class="flex items-center space-x-4">
                 <span class="font-semibold text-forest-700 dark:text-forest-200">Project Types:</span>
@@ -3319,10 +3367,6 @@ html {
 </div>
     </div>
   </div>
-
-  <button id="chatToggle" class="w-14 h-14 rounded-full bg-gradient-to-r from-forest-600 to-forest-800 text-white shadow-2xl flex items-center justify-center text-xl btn-magic hover:scale-110 transition-transform">
-    <i class="fas fa-robot"></i>
-  </button>
 </div>
     </div>
   </div>
@@ -3333,6 +3377,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
