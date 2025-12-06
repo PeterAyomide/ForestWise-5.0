@@ -19,7 +19,7 @@ export async function onRequestPost(context) {
     const body = await context.request.json();
     const { message, conversationHistory = [], imageData, context: userContext, speciesData } = body;
 
-    // Access Environment Variable (Set this in Cloudflare Dashboard)
+    // Access Environment Variable
     const API_KEY = context.env.GEMINI_API_KEY;
 
     if (!API_KEY) {
@@ -32,34 +32,40 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Configure Gemini API
-    const MODEL_NAME = "gemini-2.5-flash"; // Updated to valid model name (2.5 doesn't exist yet publicly, 1.5 is the current fast one)
+    // --- MODEL CONFIGURATION ---
+    // gemini-1.5-flash is the current standard for speed and efficiency.
+    const MODEL_NAME = "gemini-2.5-flash"; 
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
 
-    // --- YOUR CUSTOM SYSTEM PROMPT LOGIC ---
+    // --- DATA CONTEXT PREPARATION ---
     const speciesContext = speciesData 
       ? `REAL-TIME DATABASE ACCESS: You have access to the following trusted species database: ${JSON.stringify(speciesData)}.`
       : "DATABASE STATUS: Species database not provided for this request.";
 
+    // --- SYSTEM PROMPT (TONE ADJUSTMENT) ---
     const systemInstruction = `
-      You are ForestWise AI, a warm, knowledgeable, and passionate forestry expert dedicated to restoring Nigeria's ecosystems.
+      You are ForestWise AI (refer to yourself as "Onyx"), a professional forestry consultant and data analyst for the SilviQ platform.
       
-      YOUR PERSONALITY:
-      - Tone: Friendly, encouraging, and deeply educational (like a wise mentor).
-      - Style: Conversational and engaging. Don't just list facts; explain *why* they matter.
-      - Perspective: You care about biodiversity, soil health, and sustainable living.
+      YOUR PERSONALITY & TONE:
+      - Role: Expert Consultant.
+      - Tone: Professional, objective, precise, and concise. 
+      - Avoid: Excessive enthusiasm, exclamation marks, emojis, or casual slang. Do not sound like a cheerleader.
+      - Focus: Prioritize accuracy, scientific context, and practical utility.
+      
+      FORMATTING RULES:
+      1. Use standard Markdown for structure (bolding for key terms, bullet points for lists).
+      2. Do NOT use large headers (hashtags like ##) unless organizing a complex report.
+      3. Keep paragraphs short and scannable.
       
       YOUR DATA USAGE:
       1. You have access to a species database: ${speciesContext}
-      2. INTELLIGENT SYNTHESIS: Do not just dump JSON data. If a user asks about a tree, weave the data into sentences. 
-         - Bad: "Height: 15m. Soil: Loam."
-         - Good: "This tree is a fantastic choice for your area! It grows to a majestic 15 meters and thrives in loamy soil, making it perfect for shade."
-      3. MISSING DATA: If the database lacks info, use your general forestry knowledge to fill in the gaps, but mention that it's general advice.
+      2. DATA SYNTHESIS: When asked about trees, provide specific data points (height, soil needs) woven into clear sentences. Dont just dump the ecological data of tree species when asked about general knowledge concerning a tree.
+      3. MISSING DATA: If the database lacks info, use general forestry knowledge but state clearly that it is a general estimate.
       
       CONTEXT FROM USER SESSION:
       ${userContext || "The user is exploring tree options."}
       
-      Goal: Help the user feel confident about planting trees.
+      Goal: Provide accurate, actionable forestry data to assist the user's decision-making.
     `.trim();
 
     // Format History for Gemini
@@ -97,8 +103,8 @@ export async function onRequestPost(context) {
           parts: [{ text: systemInstruction }]
         },
         generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 800,
+          temperature: 0.3, // Lowered temperature for more deterministic/professional results
+          maxOutputTokens: 2048, // High token limit to prevent cutoff
         }
       })
     });
@@ -130,4 +136,5 @@ export async function onRequestPost(context) {
     });
   }
 }
+
 
