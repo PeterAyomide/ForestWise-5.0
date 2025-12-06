@@ -2070,7 +2070,7 @@ function exportToPDF() {
     }
 
     const formData = getFormValues();
-    const fileName = `ForestWise_Recommendations_${new Date().toISOString().split('T')[0]}.pdf`;
+    const fileName = `SilviQ_Recommendations_${new Date().toISOString().split('T')[0]}.pdf`;
     
     pdf.save(fileName);
     hideLoading();
@@ -2901,7 +2901,7 @@ function showGrowthModal(species) {
 }
 
 // ===== FIXED MODAL LOGIC (Layout & Events) =====
-const fileName = `ForestWise_Recommendations_$ {
+function showWikiModal(species) {
   const wikiModal = document.getElementById('wikiModal');
   const wikiSpeciesName = document.getElementById('wikiSpeciesName');
   const closeBtn = document.getElementById('closeWikiModal');
@@ -3256,7 +3256,7 @@ if ('scrollRestoration' in history) {
   window.scrollTo(0, 0);
   
   try {
-    console.log('🚀 Starting Enhanced ForestWise app...');
+    console.log('🚀 Starting SilviQ app...');
     showLoading();
 
     // Initialize basic UI first
@@ -3572,6 +3572,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
