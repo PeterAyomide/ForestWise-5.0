@@ -3256,6 +3256,11 @@ async function loadSpecies() {
 
 // ===== MAIN INITIALIZATION =====
 async function initApp() {
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
+  
   try {
     console.log('🚀 Starting Enhanced ForestWise app...');
     showLoading();
@@ -3690,6 +3695,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
