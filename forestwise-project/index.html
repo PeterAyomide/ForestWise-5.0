@@ -1133,46 +1133,45 @@
     }
 
     @media (max-width: 480px) {
-      /* Extra small phones */
+      /* === SAFE MOBILE FIX === */
       
       /* 1. Resize Fonts */
       .text-3xl { font-size: 1.5rem !important; }
       .text-4xl { font-size: 1.75rem !important; }
       .text-5xl { font-size: 2rem !important; }
       
-      /* 2. THE CENTERING FIX (Padding Squeeze) */
-      /* We add equal padding on left/right to the container. */
-      /* This squeezes the cards into the middle perfectly. */
+      /* 2. Container Logic */
+      /* We enable padding on the parent sections */
       section.px-6 { 
-        padding-left: 1.25rem !important; 
-        padding-right: 1.25rem !important; 
+        padding-left: 1rem !important; 
+        padding-right: 1rem !important; 
       }
 
-      /* Reset the wrapper to be normal */
-      .max-w-6xl {
+      /* We let the inner container fill that space naturally */
+      /* Do NOT force margin: 0. Let it center itself. */
+      .max-w-6xl, .max-w-5xl, .max-w-4xl {
         width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
       }
 
-      /* 3. RESIZE THE BARS (Cards) */
-      /* Make cards fill the centered space and reduce their bulkiness */
+      /* 3. Card Styling */
+      /* Add internal padding to cards so text isn't glued to the edge */
       .glass, #tool .glass, #resultsSection .glass {
         width: 100% !important;
-        padding: 1.5rem !important; /* Reduced from p-10 to p-6 equivalent */
-        margin-left: 0 !important;
-        margin-right: 0 !important;
+        box-sizing: border-box !important; /* Vital for preventing overflow */
+        padding: 1.25rem !important;
       }
+
+      /* 4. Fix Grid Columns */
+      .grid-cols-2 { grid-template-columns: 1fr !important; }
+      .project-type-selector { grid-template-columns: 1fr !important; }
       
-      /* 4. Center Headers inside the cards */
+      /* 5. Center Headers */
       .text-center-mobile {
         text-align: center !important;
         justify-content: center !important;
       }
-      
-      /* 5. Fix Grids */
-      .grid-cols-2 { grid-template-columns: 1fr !important; }
-      .project-type-selector { grid-template-columns: 1fr !important; }
     }
 
     /* Better touch targets for mobile */
@@ -1193,10 +1192,15 @@
     }
 
     /* Prevent horizontal scrolling */
-    html, body {
+   /* html, body {
       max-width: 100%;
       overflow-x: hidden;
-    }
+    }*/
+    html, body {
+  overflow-x: hidden; /* This stops the page from scrolling sideways */
+  width: 100%;
+  position: relative;
+}
 
     /* Improve text readability on mobile */
     @media (max-width: 768px) {
@@ -2674,6 +2678,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
