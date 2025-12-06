@@ -2078,7 +2078,6 @@ html {
       <div class="hidden md:flex space-x-10 text-lg font-medium">
         <a href="#tool" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">Home</a>
         <a href="#about" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">About</a>
-        <a href="#contact" class="nav-item text-forest-700 dark:text-forest-200 hover:text-gold-400 transition">Contact</a>
       </div>
 
       <button id="darkModeToggle" class="border border-white/60 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg text-sm hover:bg-white hover:text-forest-900 transition ml-2">
@@ -2565,55 +2564,85 @@ html {
   </section>
 
    <!-- About Section -->
-  <section id="about" class="py-32 px-6 bg-forest-100 dark:bg-forest-800/40 transition">
-    <div class="max-w-5xl mx-auto text-center scroll-reveal">
-      <h2 class="text-5xl font-bold mb-8">About ForestWise</h2>
-      <p class="text-xl leading-relaxed mb-8">
-        ForestWise helps you choose the right native tree species for your location using real environmental data and AI.
-      </p>
-      <p class="text-xl leading-relaxed mb-8">
-        We integrate <strong>global soil databases</strong>, <strong>weather APIs</strong>, and <strong>satellite data</strong> to provide scientifically accurate recommendations.
-      </p>
-      <p class="text-xl leading-relaxed mb-12">
-        All recommendations are based on real-time environmental data and rule-based matching of soil, climate, and restoration goals.
-      </p>
-    </div>
-  </section>
+  <section id="about" class="py-32 px-6 bg-forest-50 dark:bg-forest-900/50 transition relative overflow-hidden">
+  <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+    <div class="absolute right-0 top-0 w-96 h-96 bg-gold-400 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+    <div class="absolute left-0 bottom-0 w-96 h-96 bg-forest-600 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+  </div>
 
-  <!-- Contact Section -->
-  <section id="contact" class="py-32 px-6">
-    <div class="max-w-4xl mx-auto glass p-12 scroll-reveal">
-      <h2 class="text-4xl font-bold text-center mb-8">Contact Us</h2>
-      <form id="contactForm" class="space-y-6">
-        <div class="form-group">
-          <label class="form-label">Name</label>
-          <input type="text" name="name" required class="w-full p-4 rounded-xl border border-forest-200 dark:border-forest-600 bg-white/70 dark:bg-forest-800/60 input-glow">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" name="email" required class="w-full p-4 rounded-xl border border-forest-200 dark:border-forest-600 bg-white/70 dark:bg-forest-800/60 input-glow">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Message</label>
-          <textarea name="message" rows="5" required class="w-full p-4 rounded-xl border border-forest-200 dark:border-forest-600 bg-white/70 dark:bg-forest-800/60 input-glow"></textarea>
-        </div>
-        <button type="submit" class="w-full bg-forest-600 hover:bg-forest-700 text-white py-4 rounded-xl text-xl font-semibold btn-magic">
-          Send Message
-        </button>
-      </form>
+  <div class="max-w-6xl mx-auto relative z-10">
+    <div class="text-center mb-16 scroll-reveal">
+      <h2 class="text-5xl font-bold mb-6 text-forest-800 dark:text-forest-100 logo-font">Why ForestWise?</h2>
+      <p class="text-xl text-forest-600 dark:text-forest-300 max-w-2xl mx-auto leading-relaxed">
+        We bridge the gap between technology and ecology. By combining satellite data with botanical expertise, we ensure every tree planted has the best chance of survival.
+      </p>
     </div>
-  </section>
+
+    <div class="grid md:grid-cols-3 gap-8 text-center">
+      <div class="glass p-8 hover:transform hover:-translate-y-2 transition duration-500 card-magic">
+        <div class="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6 text-3xl">
+          🌍
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-forest-800 dark:text-forest-100">Hyper-Local Data</h3>
+        <p class="text-forest-600 dark:text-forest-300 text-sm leading-relaxed">
+          We don't guess. We analyze real-time soil PH, rainfall patterns, and temperature variance specific to your exact GPS coordinates.
+        </p>
+      </div>
+
+      <div class="glass p-8 hover:transform hover:-translate-y-2 transition duration-500 card-magic">
+        <div class="w-16 h-16 mx-auto bg-gold-100 dark:bg-gold-900/30 rounded-full flex items-center justify-center mb-6 text-3xl">
+          🤖
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-forest-800 dark:text-forest-100">AI-Powered Insight</h3>
+        <p class="text-forest-600 dark:text-forest-300 text-sm leading-relaxed">
+          Our intelligent engine matches your restoration goals—whether for timber, biodiversity, or carbon capture—with the perfect native species.
+        </p>
+      </div>
+
+      <div class="glass p-8 hover:transform hover:-translate-y-2 transition duration-500 card-magic">
+        <div class="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6 text-3xl">
+          ♻️
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-forest-800 dark:text-forest-100">Sustainable Future</h3>
+        <p class="text-forest-600 dark:text-forest-300 text-sm leading-relaxed">
+          Focusing on native Nigerian species to restore degraded lands, prevent erosion, and boost local biodiversity ecosystems.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
   <!-- Footer -->
-  <footer class="py-16 text-center footer-text">
-    <p>Copyright © 2025 Peter Adegboye</p>
-    <p class="mt-2">Built with ❤️ in Nigeria</p>
-    <div class="mt-4 space-x-6">
-      <a href="#" class="hover:text-gold-400">Privacy Policy</a>
-      <a href="#" class="hover:text-gold-400">Terms of Use</a>
+  <footer class="bg-white dark:bg-forest-900 border-t border-forest-100 dark:border-forest-800 pt-16 pb-8 transition-colors">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-12">
+      <div class="mb-8 md:mb-0 text-center md:text-left">
+        <div class="flex items-center justify-center md:justify-start gap-2 mb-2">
+          <i class="fas fa-tree text-gold-500 text-2xl"></i>
+          <span class="text-2xl font-bold text-forest-800 dark:text-forest-100 logo-font">ForestWise</span>
+        </div>
+        <p class="text-forest-500 dark:text-forest-400 text-sm">Intelligent Reforestation for Nigeria.</p>
+      </div>
+
+      <div class="flex space-x-8 text-sm font-medium text-forest-600 dark:text-forest-300">
+        <a href="#tool" class="hover:text-gold-500 transition">Recommendation Tool</a>
+        <a href="#projects-page" class="hover:text-gold-500 transition">My Projects</a>
+        <a href="#soil-health-page" class="hover:text-gold-500 transition">Land Health</a>
+      </div>
     </div>
-  </footer>
-</div>
+
+    <div class="w-full h-px bg-forest-100 dark:bg-forest-800 mb-8"></div>
+
+    <div class="flex flex-col md:flex-row justify-between items-center text-xs text-forest-400 dark:text-forest-500">
+      <p>&copy; 2025 Peter Adegboye. All rights reserved.</p>
+      <div class="flex items-center mt-4 md:mt-0">
+        <span>Built with</span>
+        <i class="fas fa-heart text-red-400 mx-1 animate-pulse"></i>
+        <span>in Nigeria</span>
+      </div>
+    </div>
+  </div>
+</footer>
 
 <!-- Projects Page -->
 <div class="page" id="projects-page">
@@ -3124,6 +3153,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
