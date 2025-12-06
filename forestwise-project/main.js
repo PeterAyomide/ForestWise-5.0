@@ -437,129 +437,6 @@ function handleDataConfirmation(isAccurate) {
   }
 }
 
-function updateRadarChart() {
-  const canvas = document.getElementById('soilHealthRadar');
-  if (!canvas) {
-    console.error('Radar chart canvas element not found');
-    return;
-  }
-  
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    console.error('Could not get 2D context for radar chart');
-    return;
-  }
-
-  // Destroy existing chart if it exists
-  if (currentRadarChart) {
-    currentRadarChart.destroy();
-  }
-
-  const scores = calculateCurrentScores();
-  console.log('Current scores for radar:', scores);
-  
-  const labels = ['Soil Structure', 'Erosion Control', 'Vegetation Cover', 'Land Management', 'Water Retention'];
-  
-  // Ensure we have valid scores (default to 1 if undefined)
-  const currentScores = [
-    scores.soilQuality || 1,
-    scores.erosionControl || 1, 
-    scores.vegetationCover || 1,
-    scores.landManagement || 1,
-    3 // Water retention estimated
-  ];
-  
-  const idealScores = [5, 5, 5, 5, 5];
-
-  try {
-    currentRadarChart = new Chart(ctx, {
-      type: 'radar',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Current Condition',
-            data: currentScores,
-            backgroundColor: 'rgba(212, 175, 55, 0.2)',
-            borderColor: '#D4AF37',
-            borderWidth: 2,
-            pointBackgroundColor: '#D4AF37',
-            pointBorderColor: '#fff',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: '#D4AF37'
-          },
-          {
-            label: 'Ideal Healthy Land',
-            data: idealScores,
-            backgroundColor: 'rgba(34, 197, 94, 0.1)',
-            borderColor: '#22c55e',
-            borderWidth: 1,
-            borderDash: [5, 5],
-            pointBackgroundColor: '#22c55e',
-            pointBorderColor: '#fff'
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          r: {
-            angleLines: { 
-              color: 'rgba(0, 0, 0, 0.1)',
-              lineWidth: 1
-            },
-            grid: { 
-              color: 'rgba(0, 0, 0, 0.1)',
-              circular: true
-            },
-            pointLabels: { 
-              font: { 
-                size: 11,
-                family: "'Inter', sans-serif" 
-              },
-              color: 'rgba(0, 0, 0, 0.7)'
-            },
-            min: 0,
-            max: 5,
-            ticks: { 
-              stepSize: 1,
-              backdropColor: 'transparent'
-            },
-            beginAtZero: true
-          }
-        },
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              font: {
-                family: "'Inter', sans-serif"
-              }
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                return `${context.dataset.label}: ${context.raw}/5`;
-              }
-            }
-          }
-        },
-        elements: {
-          line: {
-            tension: 0.1
-          }
-        }
-      }
-    });
-    
-    console.log('Radar chart created successfully');
-  } catch (error) {
-    console.error('Error creating radar chart:', error);
-  }
-}
-
 function goToNextStep() {
   const currentStep = document.querySelector('.wizard-step.active');
   if (!currentStep) {
@@ -721,114 +598,110 @@ function generateEnhancedRecommendations(scores, overallScore) {
   return recommendations;
 }
 
-// LAND HEALTH – RADAR SECTION
-// ----------------------------
+// ===== CORRECTED SOIL SCORING LOGIC =====
 
-// Helper: safely read radio button values
-function readRadioValue(name) {
-    const el = document.querySelector(`input[name="${name}"]:checked`);
-    return el ? parseInt(el.value) : null;   // null means “not answered yet”
-}
-
-// Main function: read the user's selections
 function calculateCurrentScores() {
-    return {
-        canopy:       readRadioValue("canopyCondition"),
-        soilStructure: readRadioValue("soilStructure"),
-        organicMatter: readRadioValue("organicMatter"),
-        moisture:      readRadioValue("moistureLevel"),
-        biodiversity:  readRadioValue("biodiversityLevel")
-    };
+  // Helper to map HTML radio values to numbers (1-5)
+  const getScore = (name, valueMap) => {
+    const element = document.querySelector(`input[name="${name}"]:checked`);
+    if (!element) return 1; // Default score if not selected
+    return valueMap[element.value] || 1;
+  };
+
+  // Maps based on your HTML values
+  return {
+    soilQuality: getScore('soilTexture', { 
+      'healthy': 5, 
+      'moderate': 3, 
+      'poor': 1 
+    }),
+    vegetationCover: getScore('vegetation', { 
+      'high': 5, 
+      'medium': 3, 
+      'low': 1 
+    }),
+    erosionControl: getScore('erosion', { 
+      'none': 5, 
+      'moderate': 2 
+    }),
+    landManagement: getScore('landUse', { 
+      'conservation': 5, 
+      'agriculture': 3, 
+      'grazing': 2, 
+      'degraded': 1 
+    })
+  };
 }
 
-// Draw radar chart ONLY when user selects something
-function updateRadarChart(scores) {
-    const canvas = document.getElementById("soilHealthRadar");
-    if (!canvas) return;
+// Ensure the radar chart updates correctly using the calculated scores
+function updateRadarChart() {
+  const canvas = document.getElementById('soilHealthRadar');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  
+  if (currentRadarChart) {
+    currentRadarChart.destroy();
+  }
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const scores = calculateCurrentScores();
+  
+  // Create data array for the chart
+  // Note: We estimate water retention based on soil quality for visualization
+  const waterRetention = scores.soilQuality >= 4 ? 4 : (scores.soilQuality >= 3 ? 3 : 2);
+  
+  const currentScores = [
+    scores.soilQuality,
+    scores.erosionControl, 
+    scores.vegetationCover,
+    scores.landManagement,
+    waterRetention
+  ];
+  
+  const idealScores = [5, 5, 5, 5, 5];
 
-    // Destroy old chart if exists
-    if (currentRadarChart) {
-        currentRadarChart.destroy();
-    }
-
-    // Convert nulls to 0 for chart visualization
-    const datasetValues = [
-        scores.canopy       ?? 0,
-        scores.soilStructure ?? 0,
-        scores.organicMatter ?? 0,
-        scores.moisture      ?? 0,
-        scores.biodiversity  ?? 0
-    ];
-
-    currentRadarChart = new Chart(ctx, {
-        type: "radar",
-        data: {
-            labels: ["Canopy", "Soil Structure", "Org. Matter", "Moisture", "Biodiversity"],
-            datasets: [{
-                label: "Land Health Condition",
-                data: datasetValues,
-                fill: true,
-                pointRadius: 4,
-                borderWidth: 2
-            }]
+  currentRadarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Soil Structure', 'Erosion Control', 'Vegetation', 'Land Mgmt', 'Water Retention'],
+      datasets: [
+        {
+          label: 'Current Condition',
+          data: currentScores,
+          backgroundColor: 'rgba(212, 175, 55, 0.2)',
+          borderColor: '#D4AF37',
+          borderWidth: 2,
+          pointBackgroundColor: '#D4AF37'
         },
-        options: {
-            responsive: true,
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    max: 5,
-                    ticks: { stepSize: 1 }
-                }
-            }
+        {
+          label: 'Target Goal',
+          data: idealScores,
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          borderColor: '#22c55e',
+          borderWidth: 1,
+          borderDash: [5, 5],
+          pointBackgroundColor: 'transparent',
+          pointBorderColor: 'transparent'
         }
-    });
-}
-
-// Listener: waits for user interaction
-const landHealthForm = document.getElementById("landHealthForm");
-
-if (landHealthForm) {
-    landHealthForm.addEventListener("change", () => {
-        const scores = calculateCurrentScores();
-
-        // Update radar immediately
-        updateRadarChart(scores);
-
-        // Do NOT advance to scoring unless all 5 questions are answered
-        const allAnswered = Object.values(scores).every(v => v !== null);
-
-        if (allAnswered) {
-            calculateLandHealthScore(scores);
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0,
+          max: 5,
+          ticks: { display: false, stepSize: 1 },
+          pointLabels: { font: { size: 10 } }
         }
-    });
+      },
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
 }
-
-// Final scoring function (Step 3)
-function calculateLandHealthScore(scores) {
-    const values = Object.values(scores);
-
-    // Safe average
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    const outOfFive = avg.toFixed(1);
-
-    document.getElementById("landHealthScore").innerText =
-        `Land Health Score: ${outOfFive} / 5`;
-
-    document.getElementById("landScoreText").innerText =
-        interpretHealthScore(avg);
-}
-
-// Optional: Give interpretation text
-function interpretHealthScore(score) {
-    if (score >= 4) return "Excellent land with strong ecological function.";
-    if (score >= 3) return "Good land with minor issues.";
-    if (score >= 2) return "Moderate land – some improvements needed.";
-    return "Poor land health – restoration recommended."
-} 
 
 function getSpeciesForGoal(goal) {
   if (!speciesData) return [];
@@ -973,39 +846,6 @@ function displayEnhancedSoilHealthResults(overallScore, scores, recommendations)
     </div>
   `;
 }
-
-function debugStep2() {
-  console.log('=== STEP 2 DEBUG ===');
-  
-  // Check if step 2 elements exist
-  const step2 = document.querySelector('.wizard-step[data-step="2"]');
-  console.log('Step 2 element:', step2);
-  
-  const radarCanvas = document.getElementById('soilHealthRadar');
-  console.log('Radar canvas:', radarCanvas);
-  console.log('Canvas dimensions:', radarCanvas?.width, 'x', radarCanvas?.height);
-  
-  // Test radio button functionality
-  const assessmentOptions = document.querySelectorAll('.assessment-option');
-  console.log('Assessment options found:', assessmentOptions.length);
-  
-  // Manually try to show step 2
-  if (step2) {
-    document.querySelectorAll('.wizard-step').forEach(step => {
-      step.classList.remove('active');
-      step.classList.add('hidden');
-    });
-    step2.classList.remove('hidden');
-    step2.classList.add('active');
-    
-    setTimeout(() => {
-      updateRadarChart();
-    }, 100);
-  }
-}
-
-// Make it available globally
-window.debugStep2 = debugStep2;
 
 function saveSoilHealthAssessment() {
   const scores = calculateCurrentScores();
@@ -3782,68 +3622,6 @@ function initEnhancedChatWidget() {
   }
 }
 
-// ===== PAGE SWITCH FIX (GUARANTEED WORKING) =====
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("✅ Navigation system ready");
-
-  // Handle clicking menu items
-  document.querySelectorAll(".menu-item").forEach((item) => {
-    item.addEventListener("click", () => {
-      const targetPage = item.dataset.page;
-
-      // Hide all pages
-      document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
-
-      // Show target page
-      const pageToShow = document.getElementById(`${targetPage}-page`);
-      if (pageToShow) pageToShow.classList.add("active");
-
-      // Update active menu style
-      document.querySelectorAll(".menu-item").forEach((i) => i.classList.remove("active"));
-      item.classList.add("active");
-
-      // Optional: reinitialize maps or data when switching
-      if (targetPage === "projects" && typeof initMappingSystem === "function") {
-        setTimeout(() => initMappingSystem(), 300);
-      }
-      if (targetPage === "soil-health" && typeof initSoilHealthAssessment === "function") {
-        setTimeout(() => initSoilHealthAssessment(), 300);
-      }
-    });
-  });
-
-  // Ensure the first page shows on load
-  const defaultPage = document.getElementById("recommendation-page");
-  if (defaultPage) defaultPage.classList.add("active");
-});
-
-// Debug function for soil health
-function debugSoilHealth() {
-  console.log('=== SOIL HEALTH DEBUG ===');
-  console.log('userLocation:', userLocation);
-  console.log('soilHealthHistory:', soilHealthHistory);
-  
-  const activeStep = document.querySelector('.wizard-step.active');
-  console.log('Active step:', activeStep ? activeStep.dataset.step : 'None');
-  
-  // Test radio button detection
-  const soilTexture = document.querySelector('input[name="soilTexture"]:checked');
-  const erosion = document.querySelector('input[name="erosion"]:checked');
-  console.log('Selected soil texture:', soilTexture?.value);
-  console.log('Selected erosion:', erosion?.value);
-  
-  // Test score calculation
-  try {
-    const scores = calculateCurrentScores();
-    console.log('Current scores:', scores);
-  } catch (e) {
-    console.error('Error calculating scores:', e);
-  }
-}
-
-// Make it globally available
-window.debugSoilHealth = debugSoilHealth;
-
 // Add this to your main.js file
 function adjustToolLayout() {
   const toolSection = document.getElementById('tool');
@@ -3912,6 +3690,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
