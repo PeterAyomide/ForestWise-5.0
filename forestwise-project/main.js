@@ -3844,6 +3844,32 @@ function debugSoilHealth() {
 // Make it globally available
 window.debugSoilHealth = debugSoilHealth;
 
+// Add this to your main.js file
+function adjustToolLayout() {
+  const toolSection = document.getElementById('tool');
+  if (!toolSection) return;
+  
+  const screenWidth = window.innerWidth;
+  
+  if (screenWidth < 480) {
+    // Add a special class for extra-small screens
+    toolSection.classList.add('xs-screen');
+    
+    // Adjust grid containers
+    const glassContainers = toolSection.querySelectorAll('.glass');
+    glassContainers.forEach(container => {
+      container.style.maxWidth = '100%';
+      container.style.overflow = 'hidden';
+    });
+  } else {
+    toolSection.classList.remove('xs-screen');
+  }
+}
+
+// Run on load and resize
+window.addEventListener('load', adjustToolLayout);
+window.addEventListener('resize', adjustToolLayout);
+
 // ===== START THE APP =====
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
@@ -3851,6 +3877,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
