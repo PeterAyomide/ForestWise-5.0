@@ -1132,47 +1132,129 @@
       }
     }
 
-    @media (max-width: 480px) {
-      /* === SAFE MOBILE FIX === */
-      
-      /* 1. Resize Fonts */
-      .text-3xl { font-size: 1.5rem !important; }
-      .text-4xl { font-size: 1.75rem !important; }
-      .text-5xl { font-size: 2rem !important; }
-      
-      /* 2. Container Logic */
-      /* We enable padding on the parent sections */
-      section.px-6 { 
-        padding-left: 1rem !important; 
-        padding-right: 1rem !important; 
-      }
+   @media (max-width: 480px) {
+  /* === SAFE MOBILE FIX === */
+  
+  /* 1. Resize Fonts */
+  .text-3xl { font-size: 1.5rem !important; }
+  .text-4xl { font-size: 1.75rem !important; }
+  .text-5xl { font-size: 2rem !important; }
+  
+  /* 2. Container Logic - FIXED */
+  /* Apply proper padding to sections */
+  section, .section-padding {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Keep inner containers at 100% width but with internal padding */
+  .max-w-6xl, .max-w-5xl, .max-w-4xl, .max-w-7xl {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* 3. Specific fixes for problem sections */
+  /* For slideshow container */
+  #natureSlideshow .max-w-6xl.mx-auto.px-6 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  #natureSlideshow .relative.h-96.rounded-2xl.overflow-hidden.shadow-2xl {
+    border-radius: 1rem !important;
+    margin-left: 0.5rem !important;
+    margin-right: 0.5rem !important;
+    width: calc(100% - 1rem) !important;
+  }
+  
+  /* For tool section */
+  #tool .max-w-6xl.mx-auto {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* For glass containers */
+  .glass, #tool .glass, #resultsSection .glass, 
+  #projects-page .glass, #soil-health-page .glass {
+    padding: 1.25rem !important;
+    margin-left: 0.5rem !important;
+    margin-right: 0.5rem !important;
+    width: calc(100% - 1rem) !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* 4. Fix Grid Columns */
+  .grid-cols-2 { grid-template-columns: 1fr !important; }
+  .project-type-selector { grid-template-columns: 1fr !important; }
+  
+  /* 5. Ensure all cards have breathing room */
+  .card-hover, .card-magic {
+    padding: 1rem !important;
+    margin: 0.5rem !important;
+  }
+  
+  /* 6. Fix form inputs on small screens */
+  input, select, textarea {
+    font-size: 16px !important;
+    padding: 0.75rem !important;
+  }
+}
 
-      /* We let the inner container fill that space naturally */
-      /* Do NOT force margin: 0. Let it center itself. */
-      .max-w-6xl, .max-w-5xl, .max-w-4xl {
-        width: 100% !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-      }
-
-      /* 3. Card Styling */
-      /* Add internal padding to cards so text isn't glued to the edge */
-      .glass, #tool .glass, #resultsSection .glass {
-        width: 100% !important;
-        box-sizing: border-box !important; /* Vital for preventing overflow */
-        padding: 1.25rem !important;
-      }
-
-      /* 4. Fix Grid Columns */
-      .grid-cols-2 { grid-template-columns: 1fr !important; }
-      .project-type-selector { grid-template-columns: 1fr !important; }
-      
-      /* 5. Center Headers */
-      .text-center-mobile {
-        text-align: center !important;
-        justify-content: center !important;
-      }
-    }
+    /* Add this to your existing CSS */
+@media (max-width: 480px) {
+  /* Fix for the hero content */
+  .relative.z-10.max-w-5xl.px-6.fade-in {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Fix for the navigation menu items to prevent edge hugging */
+  .orb-menu {
+    margin: 0.5rem !important;
+    width: calc(100% - 1rem) !important;
+  }
+  
+  /* Ensure buttons don't touch edges */
+  button {
+    margin-left: 0.25rem !important;
+    margin-right: 0.25rem !important;
+    min-width: fit-content !important;
+  }
+  
+  /* Fix for location detection button */
+  #detectLocationBtn {
+    width: calc(100% - 0.5rem) !important;
+    margin-left: 0.25rem !important;
+    margin-right: 0.25rem !important;
+  }
+  
+  /* Ensure form groups have breathing room */
+  .form-group {
+    padding: 0 0.25rem !important;
+  }
+  
+  /* Fix goal chips spacing */
+  #goalChips {
+    gap: 0.5rem !important;
+    padding: 0.25rem !important;
+  }
+  
+  .chip {
+    margin: 0.125rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  
+  /* Fix for the grid layout in tool section */
+  #tool .grid.md\\:grid-cols-2.gap-12 {
+    gap: 1.5rem !important;
+    padding: 0.5rem !important;
+  }
+}
 
     /* Better touch targets for mobile */
     @media (hover: none) and (pointer: coarse) {
@@ -2678,6 +2760,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
