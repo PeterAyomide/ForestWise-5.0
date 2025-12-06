@@ -3870,6 +3870,41 @@ function adjustToolLayout() {
 window.addEventListener('load', adjustToolLayout);
 window.addEventListener('resize', adjustToolLayout);
 
+// Function to adjust slideshow for small screens
+function adjustSlideshowForSmallPhones() {
+  const slideshow = document.getElementById('natureSlideshow');
+  if (!slideshow) return;
+  
+  const screenWidth = window.innerWidth;
+  const slideshowContainer = slideshow.querySelector('.relative.h-96.rounded-2xl.overflow-hidden.shadow-2xl');
+  
+  if (screenWidth < 480 && slideshowContainer) {
+    // Add a class for extra small screens
+    slideshowContainer.classList.add('xs-screen-slideshow');
+    
+    // For very small phones, make it even more stretched
+    if (screenWidth < 360) {
+      slideshowContainer.style.marginLeft = '0.125rem';
+      slideshowContainer.style.marginRight = '0.125rem';
+      slideshowContainer.style.width = 'calc(100% - 0.25rem)';
+    }
+  } else {
+    slideshowContainer?.classList.remove('xs-screen-slideshow');
+  }
+}
+
+// Run on load and resize
+window.addEventListener('load', () => {
+  adjustSlideshowForSmallPhones();
+  // Also call adjustToolLayout if you added that earlier
+  if (typeof adjustToolLayout === 'function') adjustToolLayout();
+});
+
+window.addEventListener('resize', () => {
+  adjustSlideshowForSmallPhones();
+  if (typeof adjustToolLayout === 'function') adjustToolLayout();
+});
+
 // ===== START THE APP =====
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
@@ -3877,6 +3912,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
