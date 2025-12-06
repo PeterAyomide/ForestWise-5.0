@@ -2900,113 +2900,88 @@ function showGrowthModal(species) {
   }
 }
 
-// ===== NEW SPLIT-VIEW MODAL LOGIC =====
-function showWikiModal(species) {
+// ===== FIXED MODAL LOGIC (Layout & Events) =====
+const fileName = `ForestWise_Recommendations_$ {
   const wikiModal = document.getElementById('wikiModal');
   const wikiSpeciesName = document.getElementById('wikiSpeciesName');
+  const closeBtn = document.getElementById('closeWikiModal');
   
-  if (!wikiModal || !wikiSpeciesName) return;
+  if (!wikiModal) return;
 
-  // Set Global Context for Planting Guide
   window.currentSpecies = species;
   window.currentSpeciesPlantingGuide = null;
-  
   wikiSpeciesName.textContent = species['Common Name'] || species['Species Name'];
   wikiModal.classList.add('show');
 
-  // Reset Tabs
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelector('[data-tab="wikipedia"]').classList.add('active');
-  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('hidden')); 
-  document.getElementById('planting-guide-tab').classList.add('hidden'); 
-  document.getElementById('wikipedia-tab').classList.remove('hidden'); 
+  const newCloseBtn = closeBtn.cloneNode(true);
+  closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+  newCloseBtn.addEventListener('click', () => wikiModal.classList.remove('show'));
 
-  // Fetch Wikipedia
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(btn => {
+    btn.onclick = () => {
+      tabBtns.forEach(b => b.classList.remove('active', 'text-gold-500', 'border-gold-400'));
+      btn.classList.add('active', 'text-gold-500', 'border-gold-400');
+      document.getElementById('wikipedia-tab').classList.add('hidden');
+      document.getElementById('planting-guide-tab').classList.add('hidden');
+      const targetId = btn.dataset.tab === 'wikipedia' ? 'wikipedia-tab' : 'planting-guide-tab';
+      document.getElementById(targetId).classList.remove('hidden');
+      if(btn.dataset.tab === 'planting-guide') loadPlantingGuide(species);
+    };
+  });
+
   const contentEl = document.getElementById('wikiContent');
   const linkEl = document.getElementById('wikiLink');
+  contentEl.textContent = 'Retrieving database info...';
   
-  if (contentEl) contentEl.textContent = 'Loading Wikipedia information...';
-  
-  const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(species['Species Name'])}`;
-
-  fetch(url)
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to fetch Wikipedia data');
-      return res.json();
-    })
+  fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(species['Species Name'])}`)
+    .then(res => res.json())
     .then(data => {
-      if (contentEl) contentEl.textContent = data.extract || 'No detailed information available.';
-      if (linkEl) {
-        linkEl.href = data.content_urls?.desktop?.page || '#';
-        linkEl.style.display = data.content_urls ? 'inline-flex' : 'none';
-      }
+      contentEl.textContent = data.extract || 'No external database summary available.';
+      linkEl.href = data.content_urls?.desktop?.page || '#';
     })
-    .catch((error) => {
-      console.error('Wikipedia fetch error:', error);
-      if (contentEl) contentEl.textContent = 'Could not load Wikipedia data.';
-    });
+    .catch(() => contentEl.textContent = 'Could not retrieve info.');
 
-  // === AI SIDEBAR LOGIC ===
-  const modalAiMessages = document.getElementById('modalAiMessages');
-  const modalInput = document.getElementById('userQuestion'); // This is the input inside the modal
-  const modalAskBtn = document.getElementById('askAI');       // This is the button inside the modal
+  const aiContainer = document.getElementById('modalAiMessages');
+  const aiInput = document.getElementById('modal-ai-input');
+  const aiSend = document.getElementById('modal-ai-send');
 
-  // Reset Chat History for this Species
-  if (modalAiMessages) {
-    modalAiMessages.innerHTML = `
-      <div class="assistant-message message-bubble text-sm">
-        I have loaded data for <b>${species['Common Name']}</b>. Ask me specific questions about this tree! 🌿
-      </div>
-    `;
-  }
+  aiContainer.innerHTML = `<div class="bg-white p-3 rounded-lg shadow-sm text-sm self-start text-gray-700">I am Onyx. I have analyzed <b>${species['Common Name']}</b>. Query me for specifics.</div>`;
 
-  // Define the Send Handler
-  async function handleModalAsk() {
-    const text = modalInput.value.trim();
-    if (!text) return;
+  async function handleModalQuestion() {
+    const text = aiInput.value.trim();
+    if(!text) return;
+    const userBubble = document.createElement('div');
+    userBubble.className = 'bg-gold-500 text-white p-3 rounded-lg shadow-sm text-sm self-end max-w-[85%] mb-2';
+    userBubble.textContent = text;
+    aiContainer.appendChild(userBubble);
+    aiInput.value = '';
+    aiContainer.scrollTop = aiContainer.scrollHeight;
 
-    // 1. Add User Question
-    const userDiv = document.createElement('div');
-    userDiv.className = 'user-message message-bubble text-sm';
-    userDiv.textContent = text;
-    modalAiMessages.appendChild(userDiv);
+    const loadingBubble = document.createElement('div');
+    loadingBubble.className = 'bg-white p-3 rounded-lg shadow-sm text-sm self-start text-gray-500 mb-2';
+    loadingBubble.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Onyx is analyzing...';
+    aiContainer.appendChild(loadingBubble);
     
-    modalInput.value = '';
-    modalAiMessages.scrollTop = modalAiMessages.scrollHeight;
-
-    // 2. Add Loading
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'assistant-message message-bubble text-sm';
-    loadingDiv.innerHTML = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
-    modalAiMessages.appendChild(loadingDiv);
-    modalAiMessages.scrollTop = modalAiMessages.scrollHeight;
-
-    // 3. AI Request
     try {
-      // Force context to be about THIS specific tree
-      const context = `The user is asking about the tree species: ${species['Species Name']} (Common Name: ${species['Common Name']}). Answer specifically about this tree.`;
+      const context = `The user is asking about the tree: ${species['Species Name']} (${species['Common Name']}). Answer specifically about this tree.`;
       forestWiseAI.setContext(context);
-
-      const answer = await forestWiseAI.sendMessage(text);
-      loadingDiv.innerHTML = answer;
+      const response = await forestWiseAI.sendMessage(text);
+      loadingBubble.innerHTML = response;
+      loadingBubble.classList.remove('text-gray-500');
     } catch (err) {
-      loadingDiv.innerHTML = "Error fetching response.";
+      loadingBubble.textContent = "Error: Onyx disconnected.";
     }
-    modalAiMessages.scrollTop = modalAiMessages.scrollHeight;
+    aiContainer.scrollTop = aiContainer.scrollHeight;
   }
 
-  // Remove old event listeners (Clone Node Trick)
-  const newBtn = modalAskBtn.cloneNode(true);
-  modalAskBtn.parentNode.replaceChild(newBtn, modalAskBtn);
-  
-  const newInput = modalInput.cloneNode(true);
-  modalInput.parentNode.replaceChild(newInput, modalInput);
+  const newSend = aiSend.cloneNode(true);
+  aiSend.parentNode.replaceChild(newSend, aiSend);
+  const newInput = aiInput.cloneNode(true);
+  aiInput.parentNode.replaceChild(newInput, aiInput);
 
-  // Add new listeners
-  newBtn.addEventListener('click', handleModalAsk);
-  newInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleModalAsk();
-  });
+  newSend.addEventListener('click', handleModalQuestion);
+  newInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleModalQuestion(); });
 }
 
 // ===== NAVIGATION FUNCTIONS ONLY =====
@@ -3448,19 +3423,16 @@ class ForestWiseAI {
 // Initialize AI Assistant
 const forestWiseAI = new ForestWiseAI();
 
-// ===== GEMINI-STYLE CHAT WIDGET =====
+// ===== ONYX CHAT WIDGET =====
 function initEnhancedChatWidget() {
   const chatToggle = document.getElementById('chatToggle');
   const chatBox = document.getElementById('chatBox');
   const closeChat = document.getElementById('closeChat');
-  const clearChat = document.getElementById('clearChat');
   
-  // Inputs
   const chatInput = document.getElementById('chatInput');
   const sendButton = document.getElementById('sendChat');
   const chatMessages = document.getElementById('chatMessages');
   
-  // Image Uploads
   const uploadButton = document.getElementById('uploadButton');
   const imageUpload = document.getElementById('imageUpload');
   const imagePreview = document.getElementById('imagePreview');
@@ -3468,13 +3440,11 @@ function initEnhancedChatWidget() {
 
   let currentImageFile = null;
 
-  // 1. Toggle & Close
   if (chatToggle) {
     chatToggle.addEventListener('click', () => {
       chatBox.classList.toggle('hidden');
       if (!chatBox.classList.contains('hidden')) {
         chatInput.focus();
-        // Scroll to bottom when opening
         chatMessages.scrollTop = chatMessages.scrollHeight;
       }
     });
@@ -3484,29 +3454,14 @@ function initEnhancedChatWidget() {
     closeChat.addEventListener('click', () => chatBox.classList.add('hidden'));
   }
 
-  // 2. Clear History
-  if (clearChat) {
-    clearChat.addEventListener('click', () => {
-      chatMessages.innerHTML = `
-        <div class="assistant-message message-bubble">
-          Chat cleared. How can I help you now? 🧹
-        </div>
-      `;
-      forestWiseAI.clearHistory();
-    });
-  }
-
-  // 3. Image Handling
   if (uploadButton) {
     uploadButton.addEventListener('click', () => imageUpload.click());
-    
     imageUpload.addEventListener('change', (e) => {
       if (e.target.files[0]) {
         currentImageFile = e.target.files[0];
         imagePreview.classList.remove('hidden');
       }
     });
-
     removeImage.addEventListener('click', () => {
       currentImageFile = null;
       imageUpload.value = '';
@@ -3514,52 +3469,39 @@ function initEnhancedChatWidget() {
     });
   }
 
-  // 4. Send Message Logic
   async function handleSend() {
     const text = chatInput.value.trim();
     if (!text && !currentImageFile) return;
 
-    // Add User Message
     const userDiv = document.createElement('div');
     userDiv.className = 'user-message message-bubble';
     userDiv.textContent = text;
-    if (currentImageFile) {
-        userDiv.innerHTML += `<div class="mt-2 text-xs opacity-70"><i class="fas fa-image"></i> Image attached</div>`;
-    }
+    if (currentImageFile) userDiv.innerHTML += `<div class="mt-2 text-xs opacity-70"><i class="fas fa-image"></i> Image attached</div>`;
     chatMessages.appendChild(userDiv);
     
-    // Reset Input
     chatInput.value = '';
     const fileToSend = currentImageFile; 
     currentImageFile = null;
     imagePreview.classList.add('hidden');
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    // Add Loading Spinner
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'assistant-message message-bubble';
-    loadingDiv.innerHTML = '<div class="flex items-center gap-2"><i class="fas fa-circle-notch fa-spin text-gold-500"></i> Thinking...</div>';
+    loadingDiv.innerHTML = '<div class="flex items-center gap-2"><i class="fas fa-circle-notch fa-spin text-gold-500"></i> Onyx is analyzing...</div>';
     chatMessages.appendChild(loadingDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    // Call API
     try {
         const response = await forestWiseAI.sendMessage(text || "Analyze this image", fileToSend);
-        loadingDiv.innerHTML = response; // Replace spinner with answer
+        loadingDiv.innerHTML = response; 
     } catch (err) {
-        loadingDiv.innerHTML = "⚠️ Sorry, I encountered an connection error. Please try again.";
-        console.error(err);
+        loadingDiv.innerHTML = "⚠️ Connection interrupted. Onyx could not reach the server.";
     }
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
-  // Listeners
   if (sendButton) sendButton.addEventListener('click', handleSend);
-  if (chatInput) {
-      chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSend();
-      });
-  }
+  if (chatInput) chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
 }
 
 // Add this to your main.js file
@@ -3630,6 +3572,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
