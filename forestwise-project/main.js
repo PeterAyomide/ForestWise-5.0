@@ -3338,6 +3338,7 @@ class ForestWiseAI {
     this.currentContext = '';
   }
 
+  // REPLACEMENT for the sendMessage method in main.js
   async sendMessage(message, imageFile = null) {
     if (this.isProcessing) {
       throw new Error('Already processing a message');
@@ -3347,69 +3348,101 @@ class ForestWiseAI {
     
     try {
       let imageData = null;
-      
-      // Convert image to base64 if provided
       if (imageFile) {
         imageData = await this.fileToBase64(imageFile);
       }
 
-      const userMessage = {
-        role: "user",
-        content: message
-      };
-      
-      // Add to conversation history
+      const userMessage = { role: "user", content: message };
       this.conversationHistory.push(userMessage);
 
-      // --- CHANGE START: Access global speciesData ---
-      // We pass the global speciesData variable loaded in initApp
-      const currentSpeciesData = speciesData || [];
-      // --- CHANGE END ---
+      // --- NEW LOGIC: CLIENT-SIDE RAG (Retrieval Augmented Generation) ---
+      // Instead of sending the whole DB, we find the relevant trees first.
+      
+      let relevantContext = "No specific database records found.";
+      
+      // Access the global speciesData variable
+      if (speciesData && speciesData.length > 0) {
+        // Configure Fuse to look for matches in Name, Common Name, and Uses
+        const fuse = new Fuse(speciesData, {
+          keys: ['Species Name', 'Common Name', 'Restoration Goal', 'specialInstructions'],
+          threshold: 0.4, // Lower number = stricter matching
+          distance: 100
+        });
 
-     const response = await fetch('/forestwise-ai', {
+        // Search the user's message against the database
+        const results = fuse.search(message);
+        
+        // Take the top 3 results only
+        const topMatches = results.slice(0, 3).map(r => r.item);
+        
+        if (topMatches.length > 0) {
+          relevantContext = JSON.stringify(topMatches);
+          console.log(`🔍 Smart Search found ${topMatches.length} relevant trees.`);
+        }
+      }
+      // -------------------------------------------------------------------
+
+      // Send to your Cloudflare Backend
+      const response = await fetch('/forestwise-ai', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: message,
           conversationHistory: this.conversationHistory,
           imageData: imageData,
           context: this.currentContext,
-          speciesData: currentSpeciesData // <--- Sending the database
+          // WE SEND ONLY THE RELEVANT DATA NOW (Tiny payload!)
+          speciesSnippet: relevantContext 
         })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
-      }
-
+      if (!response.ok) throw new Error(`Server Error: ${response.status}`);
       const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      const assistantMessage = {
-        role: "assistant",
-        content: data.response
-      };
       
+      if (data.error) throw new Error(data.error);
+
+      const assistantMessage = { role: "assistant", content: data.response };
       this.conversationHistory.push(assistantMessage);
 
-      // Keep conversation history manageable (last 10 messages)
-      if (this.conversationHistory.length > 10) {
-        this.conversationHistory = this.conversationHistory.slice(-10);
-      }
+      // Keep history short
+      if (this.conversationHistory.length > 10) this.conversationHistory = this.conversationHistory.slice(-10);
 
       return data.response;
 
     } catch (error) {
-      console.error('AI Assistant error:', error);
-      // Remove the user message if the request failed
+      console.error('AI Connection Failed:', error);
+      
+      // --- THE ULTIMATE SAFETY NET ---
+      // If the AI/Internet fails, we STILL show the user the local data we found.
+      // This ensures the professor always sees a result.
+      
+      // 1. Re-run the local search (since we can't access 'relevantContext' from inside catch easily)
+      let fallbackResponse = "I'm having trouble connecting to the server, and I couldn't find local data for that.";
+      
+      if (speciesData && speciesData.length > 0) {
+        const fuse = new Fuse(speciesData, {
+          keys: ['Species Name', 'Common Name', 'Restoration Goal'],
+          threshold: 0.4
+        });
+        const results = fuse.search(message);
+        
+        if (results.length > 0) {
+          const topMatch = results[0].item;
+          // Format a basic response locally without AI
+          fallbackResponse = `**[OFFLINE MODE]** Server unreachable, but I found this in your database:\n\n` +
+            `**Species:** ${topMatch['Species Name']}\n` +
+            `**Common Name:** ${topMatch['Common Name'] || 'N/A'}\n` +
+            `**Best Use:** ${topMatch['Restoration Goal']}\n\n` +
+            `*(Displaying local data only)*`;
+        }
+      }
+
+      // 2. Remove the failed user message from history so it doesn't break context
       this.conversationHistory.pop();
-      throw error;
+      
+      // 3. Return the fallback instead of throwing an error
+      return fallbackResponse; 
+      
     } finally {
       this.isProcessing = false;
     }
@@ -3591,6 +3624,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
