@@ -34,7 +34,7 @@ export async function onRequestPost(context) {
 
     // --- MODEL CONFIGURATION ---
     // gemini-1.5-flash is the current standard for speed and efficiency.
-    const MODEL_NAME = "gemini-1.5-flash-002"; 
+    const MODEL_NAME = "gemini-1.5-flash"; 
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
 
     // --- DATA CONTEXT PREPARATION ---
@@ -136,6 +136,7 @@ export async function onRequestPost(context) {
     });
   }
 }
+
 
 
 
