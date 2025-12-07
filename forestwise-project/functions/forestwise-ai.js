@@ -1,6 +1,6 @@
 // functions/forestwise-ai.js
 
-// 1. Handle CORS Preflight (OPTIONS requests)
+// 1. Handle Preflight Options (CORS)
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
@@ -12,134 +12,126 @@ export async function onRequestOptions() {
   });
 }
 
-// 2. Handle POST requests (The Main Logic)
+// 2. The Main Handler
 export async function onRequestPost(context) {
   try {
-    // Parse incoming data
     const body = await context.request.json();
-    const { message, conversationHistory = [], imageData, context: userContext, speciesData } = body;
+    const { message, conversationHistory = [], speciesSnippet } = body;
 
-    // Access Environment Variable
-    const API_KEY = context.env.GEMINI_API_KEY;
-
-    if (!API_KEY) {
-      return new Response(JSON.stringify({ error: "Server Error: Missing GEMINI_API_KEY" }), {
-        status: 500,
-        headers: { 
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*" 
-        }
-      });
-    }
-
-    // --- MODEL CONFIGURATION ---
-    // gemini-1.5-flash is the current standard for speed and efficiency.
-    const MODEL_NAME = "gemini-1.5-flash"; 
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-
-    // --- DATA CONTEXT PREPARATION ---
-    const speciesContext = speciesData 
-      ? `REAL-TIME DATABASE ACCESS: You have access to the following trusted species database: ${JSON.stringify(speciesData)}.`
-      : "DATABASE STATUS: Species database not provided for this request.";
-
-    // --- SYSTEM PROMPT (TONE ADJUSTMENT) ---
-    const systemInstruction = `
-      You are ForestWise AI (refer to yourself as "Onyx"), a professional forestry consultant and data analyst for the SilviQ platform.
+    // --- SYSTEM PROMPT ---
+    const systemPrompt = `
+      You are Onyx, a forestry expert for SilviQ.
+      Tone: Professional, concise, scientific.
       
-      YOUR PERSONALITY & TONE:
-      - Role: Expert Consultant.
-      - Tone: Professional, objective, precise, and concise. 
-      - Avoid: Excessive enthusiasm, exclamation marks, emojis, or casual slang. Do not sound like a cheerleader.
-      - Focus: Prioritize accuracy, scientific context, and practical utility.
+      CRITICAL INSTRUCTION:
+      You have access to a specific database snippet below. 
+      ONLY use the information in this snippet to answer questions about specific trees.
+      If the user asks about a tree not in the snippet, answer using your general knowledge but mention you are doing so.
       
-      FORMATTING RULES:
-      1. Use standard Markdown for structure (bolding for key terms, bullet points for lists).
-      2. Do NOT use large headers (hashtags like ##) unless organizing a complex report.
-      3. Keep paragraphs short and scannable.
-      
-      YOUR DATA USAGE:
-      1. You have access to a species database: ${speciesContext}
-      2. DATA SYNTHESIS: When asked about trees, provide specific data points (height, soil needs) woven into clear sentences. Dont just dump the ecological data of tree species when asked about general knowledge concerning a tree.
-      3. MISSING DATA: If the database lacks info, use general forestry knowledge but state clearly that it is a general estimate.
-      
-      CONTEXT FROM USER SESSION:
-      ${userContext || "The user is exploring tree options."}
-      
-      Goal: Provide accurate, actionable forestry data to assist the user's decision-making.
-    `.trim();
+      DATABASE SNIPPET:
+      ${speciesSnippet || "No database matches for this query."}
+    `;
 
-    // Format History for Gemini
-    const contents = conversationHistory.map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
+    // Prepare messages for OpenAI-compatible format
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...conversationHistory.map(msg => ({ 
+        role: msg.role, 
+        content: msg.content 
+      })),
+      { role: "user", content: message }
+    ];
 
-    // Add the New Message (Text + Image support)
-    const currentParts = [];
-    if (message) currentParts.push({ text: message });
-    
-    if (imageData) {
-      // Clean base64 string
-      const base64Data = imageData.split(',')[1];
-      const mimeType = imageData.substring(imageData.indexOf(':') + 1, imageData.indexOf(';'));
-      
-      currentParts.push({
-        inline_data: {
-          mime_type: mimeType,
-          data: base64Data
-        }
-      });
-    }
-
-    contents.push({ role: 'user', parts: currentParts });
-
-    // Call Google Gemini API
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: contents,
-        system_instruction: {
-          parts: [{ text: systemInstruction }]
-        },
-        generationConfig: {
-          temperature: 0.3, // Lowered temperature for more deterministic/professional results
-          maxOutputTokens: 2048, // High token limit to prevent cutoff
-        }
-      })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API Error: ${response.status} - ${errText}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-
-    // Return Success Response
-    return new Response(JSON.stringify({ response: aiResponse }), {
-      headers: { 
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*" 
+    // --- THE PROVIDER LIST (THE HYDRA) ---
+    // We try them in this order.
+    const providers = [
+      {
+        name: "Cerebras (Fastest)",
+        url: "https://api.cerebras.ai/v1/chat/completions",
+        key: context.env.CEREBRAS_API_KEY,
+        model: "llama3.1-8b",
+      },
+      {
+        name: "Groq (Low Latency)",
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        key: context.env.GROQ_API_KEY,
+        model: "llama-3.1-8b-instant",
+      },
+      {
+        name: "SambaNova (Backup)",
+        url: "https://api.sambanova.ai/v1/chat/completions",
+        key: context.env.SAMBANOVA_API_KEY,
+        model: "Meta-Llama-3.1-8B-Instruct",
+      },
+      {
+        name: "GitHub Models (Stable)",
+        url: "https://models.github.ai/inference/chat/completions",
+        key: context.env.GITHUB_TOKEN,
+        model: "Meta-Llama-3.1-8B-Instruct", // ✅ Updated based on your test
+      },
+      {
+        name: "Cohere (Smartest)",
+        // Using Cohere's OpenAI-compatible endpoint
+        url: "https://api.cohere.ai/compatibility/v1/chat/completions",
+        key: context.env.COHERE_API_KEY,
+        model: "command-r-plus-08-2024", // ✅ Updated based on your test
       }
-    });
+    ];
+
+    // --- ROUND ROBIN LOGIC ---
+    let lastError = null;
+
+    for (const provider of providers) {
+      if (!provider.key) {
+        console.warn(`Skipping ${provider.name}: No API Key set.`);
+        continue;
+      }
+
+      try {
+        console.log(`Attempting connection to: ${provider.name}`);
+        
+        const response = await fetch(provider.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${provider.key}`
+          },
+          body: JSON.stringify({
+            model: provider.model,
+            messages: messages,
+            temperature: 0.3,
+            max_tokens: 500
+          }),
+          // 👇 TIMEOUT: If provider hangs for >6s, kill it and switch instantly.
+          signal: AbortSignal.timeout(6000) 
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`${provider.name} Error (${response.status}): ${errText}`);
+        }
+
+        const data = await response.json();
+        const reply = data.choices[0].message.content;
+
+        // SUCCESS! Return immediately.
+        return new Response(JSON.stringify({ response: reply }), {
+          headers: { "Content-Type": "application/json" }
+        });
+
+      } catch (err) {
+        console.error(`❌ ${provider.name} Failed: ${err.message}`);
+        lastError = err;
+        // Loop continues to the next provider...
+      }
+    }
+
+    // If we get here, ALL providers failed.
+    return new Response(JSON.stringify({ 
+      error: "System Overload: All AI models are currently busy. Please try again in 30 seconds." 
+    }), { status: 503 });
 
   } catch (error) {
-    console.error("Backend Error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*" 
-      }
-    });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
-
-
-
-
-
-
-
