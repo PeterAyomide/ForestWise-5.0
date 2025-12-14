@@ -15,7 +15,7 @@ const API_ENDPOINTS = {
   openMeteo: 'https://api.open-meteo.com/v1/forecast',
   openMeteoHistorical: 'https://archive-api.open-meteo.com/v1/archive',
   nasaPower: 'https://power.larc.nasa.gov/api/temporal/climatology/point',
-  openWeather: 'https://api.openweathermap.org/data/2.5/weather'
+  openWeather: 'https://api.openweathermap.org/data/2.5/weather',
   agroMonitoring: 'https://api.agromonitoring.com/agro/1.0'
 };
 
@@ -3924,6 +3924,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
