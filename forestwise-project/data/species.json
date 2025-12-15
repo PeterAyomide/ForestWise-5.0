@@ -2463,7 +2463,6 @@
       "companionPlants": "Natural savanna species"
     }
   },
-[
   {
     "Species Name": "Syzygium cordatum",
     "Common Name": "Waterberry",
@@ -2560,7 +2559,6 @@
       "companionPlants": "Good in mixed species gardens"
     }
   },
-[
   {
     "Species Name": "Tectona grandis",
     "Common Name": "Teak",
@@ -2727,3 +2725,4 @@
     }
   }
     ]
+
