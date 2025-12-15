@@ -1,8 +1,6 @@
 // ===== ENHANCED API CONFIGURATION =====
 const API_KEYS = {
   OPEN_WEATHER: 'eb72c3ca636ba4bee8afcfedf448ad4d',
-  OPENAI: '', 
-  GEMINI: '',
   // New APIs for enhanced features
   SOILGRIDS: '', // ISRIC SoilGrids API (free, no key required)
   OPENMETEO: '', // OpenMeteo API (free, no key required)
@@ -1684,9 +1682,6 @@ function loadPlantingGuide(species) {
       companionPlants: guide.companionPlants || 'Standard intercropping',
       specialInstructions: guide.specialInstructions || 'Protect from fire'
   };
-  
-  // Generate comprehensive planting guide from species data
-  const plantingGuide = generateComprehensivePlantingGuide(species);
   
   window.currentSpeciesPlantingGuide = plantingGuide;
   
@@ -3993,6 +3988,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
