@@ -1658,6 +1658,32 @@ function saveProjects() {
 function loadPlantingGuide(species) {
   const guideContainer = document.getElementById('plantingGuideContent');
   if (!guideContainer) return;
+
+  // STEP 1: Check if species.json has the rich guide, otherwise fall back to generator
+  let guide = species.PlantingGuide || generateComprehensivePlantingGuide(species);
+  
+  // Normalize keys if the JSON keys differ slightly (or just use guide directly if consistent)
+  // Your JSON keys match the display logic mostly, but let's ensure safety:
+  const plantingGuide = {
+      bestSeason: guide.bestSeason || 'Early rainy season',
+      plantingDepth: guide.plantingDepth || 'Nursery depth',
+      spacing: guide.spacing || 'Standard forestry spacing',
+      wateringSchedule: guide.wateringSchedule || 'Regular watering needed',
+      sunlightRequirements: guide.sunlightRequirements || species['Sunlight'] || 'Full Sun',
+      soilType: species['Soil Type'] || 'Loamy',
+      pHRange: `${species['pH Min']} - ${species['pH Max']}`,
+      temperatureRange: `${species['Temp Min (°C)']}°C - ${species['Temp Max (°C)']}°C`,
+      rainfallRange: `${species['Rainfall Min (mm)']}mm - ${species['Rainfall Max (mm)']}mm`,
+      growthRate: species.Metrics ? `Score: ${species.Metrics.GrowthSpeed}/10` : 'Moderate',
+      maturityAge: guide.maturityAge || '10-15 years',
+      maxHeight: species['Max Height (m)'] || 'Varies',
+      pruningInstructions: guide.pruningInstructions || 'Prune dead branches',
+      fertilization: guide.fertilization || 'Organic compost',
+      pestManagement: guide.pestManagement || 'Monitor regularly',
+      ecologicalBenefits: guide.ecologicalBenefits || species['Restoration Goal'],
+      companionPlants: guide.companionPlants || 'Standard intercropping',
+      specialInstructions: guide.specialInstructions || 'Protect from fire'
+  };
   
   // Generate comprehensive planting guide from species data
   const plantingGuide = generateComprehensivePlantingGuide(species);
@@ -2884,13 +2910,35 @@ function recommend(speciesList, criteria) {
        if (tempMax < sTempMin * 0.9 || tempMin > sTempMax * 1.1) return; 
     }
 
-    // 2. SOIL MATCH (15 pts)
-    if (soil && s['Soil Type'] && s['Soil Type'].includes(soil)) score += 15;
+    // pH Filter (MISSING IN YOUR CURRENT CODE)
+    const sPhMin = parseFloat(s['pH Min']) || 0;
+    const sPhMax = parseFloat(s['pH Max']) || 14;
+    // If the tree's range doesn't overlap at all with user's range
+    if (pHMin && pHMax) {
+       if (pHMax < sPhMin || pHMin > sPhMax) return; 
+    }
 
-    // 3. GOAL MATCH (20 pts per goal)
-    const sGoals = (s['Restoration Goal'] || '').split(',').map(g => g.trim());
-    goals.forEach(g => {
-      if (sGoals.includes(g)) score += 20;
+    // --- 2. SCORING ---
+
+    // Soil Match
+    if (soil && s['Soil Type'] && s['Soil Type'].toLowerCase().includes(soil.toLowerCase())) score += 15;
+
+    // Goal Match (ENHANCED WITH METRICS)
+    // Instead of just matching the text, we check the text AND add the specific Metric score
+    const sGoals = (s['Restoration Goal'] || '').split(',').map(g => g.trim().toLowerCase());
+    const sMetrics = s.Metrics || {};
+
+    goals.forEach(userGoal => {
+      const g = userGoal.toLowerCase();
+      
+      // Text Match
+      if (sGoals.some(goal => goal.includes(g))) score += 20;
+
+      // Metric Boost (Uses the 1-10 scores in your JSON)
+      if (g.includes('carbon') && sMetrics.CarbonSequestration) score += sMetrics.CarbonSequestration;
+      if (g.includes('biodiversity') && sMetrics.BiodiversityValue) score += sMetrics.BiodiversityValue;
+      if (g.includes('drought') && sMetrics.DroughtTolerance) score += sMetrics.DroughtTolerance;
+      if (g.includes('timber') || g.includes('growth')) score += (sMetrics.GrowthSpeed || 0);
     });
 
     // 4. BONUSES
@@ -3031,6 +3079,7 @@ function renderResults(recommendations) {
 
   container.innerHTML = '';
 
+  // Handle Empty State
   if (recommendations.length === 0) {
     container.innerHTML = `
       <div class="col-span-3 text-center p-12 scroll-reveal">
@@ -3051,15 +3100,27 @@ function renderResults(recommendations) {
   renderComparativeAnalysis(recommendations, getFormValues());
 
   recommendations.forEach((species, index) => {
+    // 1. PREPARE DATA
+    const goals = (species['Restoration Goal'] || '').split(',').map(g => g.trim()).slice(0, 3);
+    
+    // Normalize match percentage (Assuming max score is roughly 60-80 based on your logic)
+    const matchPercentage = Math.min(Math.round((species.score / 60) * 100), 100); 
+
+    // Unique ID for the "Why" button
+    const btnId = `why-btn-${index}`;
+
+    // Format Local Names from JSON object { "Hausa": "...", "Yoruba": "..." }
+    const localNames = species.LocalNames ? 
+      Object.entries(species.LocalNames)
+        .filter(([_, val]) => val) // Filter out empty strings
+        .map(([lang, name]) => `<span class="text-[10px] uppercase tracking-wide opacity-70">${lang}:</span> <span class="font-medium">${name}</span>`)
+        .join(' <span class="opacity-30 mx-1">|</span> ') 
+      : '';
+
+    // 2. CREATE CARD ELEMENTS
     const card = document.createElement('div');
     card.className = 'glass card-magic overflow-hidden transition-all duration-500 cursor-default scroll-reveal flex flex-col';
     
-    const goals = (species['Restoration Goal'] || '').split(',').map(g => g.trim()).slice(0, 3);
-    const matchPercentage = Math.min(Math.round((species.score / 60) * 100), 100); // Normalized based on max possible score
-
-    // Unique ID for the button
-    const btnId = `why-btn-${index}`;
-
     card.innerHTML = `
       <div class="absolute top-4 right-4 z-10">
         <div class="bg-gradient-to-r from-gold-400 to-gold-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
@@ -3076,15 +3137,22 @@ function renderResults(recommendations) {
         >
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
         <div class="absolute bottom-3 left-4 text-white">
-           <p class="text-xs opacity-80 italic">${species['Scientific Name'] || species['Species Name']}</p>
+           <p class="text-xs opacity-90 font-style-italic">${species['Scientific Name'] || species['Species Name']}</p>
         </div>
       </div>
 
       <div class="p-6 relative z-10 flex-1 flex flex-col">
-        <div class="flex justify-between items-start mb-2">
+        
+        <div class="mb-3">
           <h4 class="text-2xl font-bold text-forest-800 dark:text-forest-100 leading-tight">
             ${species["Common Name"] || species["Species Name"]}
           </h4>
+          
+          ${localNames ? `
+            <div class="mt-2 text-xs text-forest-600 dark:text-gold-400 bg-forest-50 dark:bg-forest-900/50 p-2.5 rounded-lg border border-forest-100 dark:border-forest-700 leading-relaxed">
+              ${localNames}
+            </div>
+          ` : ''}
         </div>
 
         <div class="flex flex-wrap gap-2 mb-4">
@@ -3096,10 +3164,10 @@ function renderResults(recommendations) {
         </div>
 
         <div class="grid grid-cols-2 gap-y-3 gap-x-4 mb-6 text-xs text-forest-600 dark:text-forest-300">
-          <div class="flex items-center"><i class="fas fa-cloud-rain w-5 text-blue-400"></i> ${species['Rainfall Min (mm)']}mm+</div>
-          <div class="flex items-center"><i class="fas fa-thermometer-half w-5 text-red-400"></i> ${species['Temp Min (°C)']} - ${species['Temp Max (°C)']}°C</div>
-          <div class="flex items-center"><i class="fas fa-layer-group w-5 text-amber-500"></i> ${species['Soil Type']}</div>
-          <div class="flex items-center"><i class="fas fa-sun w-5 text-yellow-500"></i> ${species['Sunlight']}</div>
+          <div class="flex items-center" title="Rainfall"><i class="fas fa-cloud-rain w-5 text-blue-400 text-center"></i> ${species['Rainfall Min (mm)']}mm+</div>
+          <div class="flex items-center" title="Temperature"><i class="fas fa-thermometer-half w-5 text-red-400 text-center"></i> ${species['Temp Min (°C)']} - ${species['Temp Max (°C)']}°C</div>
+          <div class="flex items-center" title="Soil Type"><i class="fas fa-layer-group w-5 text-amber-500 text-center"></i> ${species['Soil Type']}</div>
+          <div class="flex items-center" title="Sunlight"><i class="fas fa-sun w-5 text-yellow-500 text-center"></i> ${species['Sunlight']}</div>
         </div>
 
         <div class="mt-auto space-y-3">
@@ -3120,10 +3188,11 @@ function renderResults(recommendations) {
       </div>
     `;
 
-    // Add event listeners
+    // 3. ATTACH LISTENERS
+    // Wiki Modal
     card.querySelector('.viewWiki')?.addEventListener('click', () => showWikiModal(species));
     
-    // Add "Ask Onyx" Listener
+    // Ask Onyx "Why"
     card.querySelector(`#${btnId}`)?.addEventListener('click', () => 
       askOnyxWhy(species['Species Name'], btnId)
     );
@@ -3924,6 +3993,7 @@ if (document.readyState === 'loading') {
   initApp();
 
 }
+
 
 
 
