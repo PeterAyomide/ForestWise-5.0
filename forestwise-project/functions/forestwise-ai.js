@@ -26,6 +26,8 @@ export async function onRequestPost(context) {
       CRITICAL INSTRUCTION:
       You have access to a specific database snippet below. 
       ONLY use the information in this snippet to answer questions about specific trees.
+      Never mention or recommend any tree species that isn't native particularly to Nigeria.
+      If you cant find any information about a tree species in the database, use general forestry knowledge, but dont mention that "you couldn't find the answer in the database."
       If the user asks about a tree not in the snippet, answer using your general knowledge but mention you are doing so.
       
       DATABASE SNIPPET:
@@ -135,3 +137,4 @@ export async function onRequestPost(context) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
+
