@@ -69,7 +69,6 @@ const pages = {
   'soil-health':    { id: 'soil-health-page',    name: 'Land Health Check' }
 };
 
-
 // Soil health assessment weights
 const SOIL_HEALTH_WEIGHTS = {
   soilStructure: 0.3,
@@ -238,9 +237,7 @@ async function generateAIProjectPlan() {
     DETAILS:
     - Type: ${projectType.toUpperCase()}
     - Climate: ${siteData.temperature}°C, ${siteData.rainfall}mm rain.
-    - Coords: ${selectedLocation.lat.toFixed(3)}, ${selectedLocation.lng.toFixed(3)}.
-    // Change the "Coords" line to this:
-- Location: ${locationName} (Coords: ${selectedLocation.lat.toFixed(3)}, ${selectedLocation.lng.toFixed(3)})
+    - Location: ${locationName} (Coords: ${selectedLocation.lat.toFixed(3)}, ${selectedLocation.lng.toFixed(3)})
     
     OUTPUT JSON FORMAT ONLY:
     {
@@ -570,7 +567,7 @@ function goToNextStep() {
     }, 300);
   } 
     
- // === UPDATED STEP 3 LOGIC ===
+  // === UPDATED STEP 3 LOGIC ===
   else if (nextStepNumber === 3) {
     const currentScores = calculateCurrentScores();
     const overallScore = (
@@ -596,7 +593,6 @@ function goToNextStep() {
   nextStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Add this MISSING function to main.js
 function goToPrevStep() {
   const currentStep = document.querySelector('.wizard-step.active');
   if (!currentStep) return;
@@ -714,13 +710,23 @@ function generateEnhancedRecommendations(scores, overallScore) {
 }
 
 // ===== CORRECTED SOIL SCORING LOGIC =====
-
 function calculateCurrentScores() {
   // Helper to map HTML radio values to numbers (1-5)
   const getScore = (name, valueMap) => {
+    // First try to find checked radio button
     const element = document.querySelector(`input[name="${name}"]:checked`);
-    if (!element) return 1; // Default score if not selected
-    return valueMap[element.value] || 1;
+    
+    if (element) {
+      return valueMap[element.value] || 1;
+    }
+    
+    // If no checked radio, try to find selected option visually
+    const selectedOption = document.querySelector(`.assessment-option.selected input[name="${name}"]`);
+    if (selectedOption) {
+      return valueMap[selectedOption.value] || 1;
+    }
+    
+    return 1; // Default score if not selected
   };
 
   // Maps based on your HTML values
@@ -1591,7 +1597,7 @@ function loadPlantingGuide(species) {
   
   guideContainer.innerHTML = `
     <div class="mb-6 p-6 bg-gradient-to-r from-green-50 to-gold-50 dark:from-forest-800 dark:to-forest-700 rounded-2xl border border-gold-200 dark:border-gold-600">
-      <h3 class="text-2xl font-bold text-forest-800 dark:text-forest-100 mb-3 flex items-center">
+      <h3 class="text-2xl font-bold text-forest-800 dark:text-forest-100 flex items-center">
         <i class="fas fa-scroll mr-3 text-gold-400"></i>
         Comprehensive Planting Guide for ${species['Common Name'] || species['Species Name']}
       </h3>
@@ -2681,7 +2687,7 @@ function setupPHSliders() {
 }
 
 function setupGoalChips() {
-  // Event listeners are now handled by the global listener in initApp
+  // Event listeners are now handled by the setupDirectEventListeners function
   console.log('Goal chips ready');
 }
 
@@ -2805,7 +2811,7 @@ function recommend(speciesList, criteria) {
        if (tempMax < sTempMin * 0.9 || tempMin > sTempMax * 1.1) return; 
     }
 
-    // pH Filter (MISSING IN YOUR CURRENT CODE)
+    // pH Filter
     const sPhMin = parseFloat(s['pH Min']) || 0;
     const sPhMax = parseFloat(s['pH Max']) || 14;
     // If the tree's range doesn't overlap at all with user's range
@@ -2819,7 +2825,6 @@ function recommend(speciesList, criteria) {
     if (soil && s['Soil Type'] && s['Soil Type'].toLowerCase().includes(soil.toLowerCase())) score += 15;
 
     // Goal Match (ENHANCED WITH METRICS)
-    // Instead of just matching the text, we check the text AND add the specific Metric score
     const sGoals = (s['Restoration Goal'] || '').split(',').map(g => g.trim().toLowerCase());
     const sMetrics = s.Metrics || {};
 
@@ -2829,7 +2834,7 @@ function recommend(speciesList, criteria) {
       // Text Match
       if (sGoals.some(goal => goal.includes(g))) score += 20;
 
-      // Metric Boost (Uses the 1-10 scores in your JSON)
+      // Metric Boost
       if (g.includes('carbon') && sMetrics.CarbonSequestration) score += sMetrics.CarbonSequestration;
       if (g.includes('biodiversity') && sMetrics.BiodiversityValue) score += sMetrics.BiodiversityValue;
       if (g.includes('drought') && sMetrics.DroughtTolerance) score += sMetrics.DroughtTolerance;
@@ -2859,7 +2864,6 @@ async function renderComparativeAnalysis(topSpecies, criteria) {
   dashboard.classList.remove('hidden');
   
   // 1. Prepare Data for Chart
-  // We map text attributes to numbers for the "Science" feel
   const datasets = topSpecies.slice(0, 3).map((s, index) => {
     // Heuristic scoring based on tags
     let growthVal = (s['Restoration Goal'].includes('Fast') || s['Restoration Goal'].includes('Pioneer')) ? 90 : 50;
@@ -2952,7 +2956,7 @@ async function askOnyxWhy(speciesName, btnId) {
     Answer in 1 short, punchy sentence starting with "This species is selected because..."`;
 
     const answer = await forestWiseAI.sendMessage(prompt);
-    alert(`ONYX ANALYSIS:\n\n${answer}`); // Simple alert is often cleaner for quick insights
+    alert(`ONYX ANALYSIS:\n\n${answer}`);
   } catch (e) {
     alert("Onyx is offline. This tree matches your climate and soil criteria.");
   } finally {
@@ -2967,14 +2971,12 @@ function getSpeciesImageUrl(species) {
   const name = species['Common Name'] || species['Species Name'] || 'Tree';
   
   // Create a strict prompt that forces a tree appearance
-  // We use "botanical illustration style" or "national geographic photo" to ensure quality
   const prompt = `botanical photography of ${name} tree growing tall in a forest, realistic, bright sunlight, 4k, high detailed`;
   
   // Encode it so the URL doesn't break
   const encodedPrompt = encodeURIComponent(prompt);
   
-  // Use Pollinations AI (It generates a new image based on the text description)
-  // We add 'nologo=true' to keep it clean
+  // Use Pollinations AI
   return `https://image.pollinations.ai/prompt/${encodedPrompt}?nologo=true`;
 }
 
@@ -3002,23 +3004,22 @@ function renderResults(recommendations) {
   }
 
   // === TRIGGER COMPARATIVE DASHBOARD ===
-  // We pass the top recommendations and the form values to the analysis engine
   renderComparativeAnalysis(recommendations, getFormValues());
 
   recommendations.forEach((species, index) => {
     // 1. PREPARE DATA
     const goals = (species['Restoration Goal'] || '').split(',').map(g => g.trim()).slice(0, 3);
     
-    // Normalize match percentage (Assuming max score is roughly 60-80 based on your logic)
+    // Normalize match percentage
     const matchPercentage = Math.min(Math.round((species.score / 60) * 100), 100); 
 
     // Unique ID for the "Why" button
     const btnId = `why-btn-${index}`;
 
-    // Format Local Names from JSON object { "Hausa": "...", "Yoruba": "..." }
+    // Format Local Names
     const localNames = species.LocalNames ? 
       Object.entries(species.LocalNames)
-        .filter(([_, val]) => val) // Filter out empty strings
+        .filter(([_, val]) => val)
         .map(([lang, name]) => `<span class="text-[10px] uppercase tracking-wide opacity-70">${lang}:</span> <span class="font-medium">${name}</span>`)
         .join(' <span class="opacity-30 mx-1">|</span> ') 
       : '';
@@ -3095,10 +3096,8 @@ function renderResults(recommendations) {
     `;
 
     // 3. ATTACH LISTENERS
-    // Wiki Modal
     card.querySelector('.viewWiki')?.addEventListener('click', () => showWikiModal(species));
     
-    // Ask Onyx "Why"
     card.querySelector(`#${btnId}`)?.addEventListener('click', () => 
       askOnyxWhy(species['Species Name'], btnId)
     );
@@ -3175,7 +3174,7 @@ function showGrowthModal(species) {
   }
 }
 
-// ===== FIXED MODAL LOGIC (Layout & Events) =====
+// ===== FIXED MODAL LOGIC =====
 function showWikiModal(species) {
   const wikiModal = document.getElementById('wikiModal');
   const wikiSpeciesName = document.getElementById('wikiSpeciesName');
@@ -3221,19 +3220,11 @@ function showWikiModal(species) {
   const aiInput = document.getElementById('modal-ai-input');
   const aiSend = document.getElementById('modal-ai-send');
 
-  // 1. Create Clones to wipe old event listeners
-  const newSend = aiSend.cloneNode(true);
-  aiSend.parentNode.replaceChild(newSend, aiSend);
-  
-  const newInput = aiInput.cloneNode(true);
-  aiInput.parentNode.replaceChild(newInput, aiInput);
-
-  // 2. Define the handler
+  // Create fresh event listeners
   async function handleModalQuestion() {
-    // CRITICAL FIX: Read from 'newInput', not the old 'aiInput'
-    const text = newInput.value.trim(); 
+    const text = aiInput.value.trim();
     
-    if(!text) return; // This was stopping execution before because text was empty
+    if(!text) return;
 
     // Create User Bubble
     const userBubble = document.createElement('div');
@@ -3241,8 +3232,8 @@ function showWikiModal(species) {
     userBubble.textContent = text;
     aiContainer.appendChild(userBubble);
     
-    // Clear the CORRECT input
-    newInput.value = '';
+    // Clear input
+    aiInput.value = '';
     aiContainer.scrollTop = aiContainer.scrollHeight;
 
     // Create Loading Bubble
@@ -3256,7 +3247,6 @@ function showWikiModal(species) {
       forestWiseAI.setContext(context);
       const response = await forestWiseAI.sendMessage(text);
       
-      // Fix for Markdown (see Point 3 below)
       if (typeof marked !== 'undefined') {
         loadingBubble.innerHTML = marked.parse(response);
       } else {
@@ -3271,15 +3261,121 @@ function showWikiModal(species) {
     aiContainer.scrollTop = aiContainer.scrollHeight;
   }
 
-  // 3. Attach listeners to the NEW elements
-  newSend.addEventListener('click', handleModalQuestion);
-  newInput.addEventListener('keypress', (e) => { 
+  // Attach listeners
+  aiSend.addEventListener('click', handleModalQuestion);
+  aiInput.addEventListener('keypress', (e) => { 
     if(e.key === 'Enter') handleModalQuestion(); 
   });
 }
 
-// ===== NAVIGATION FUNCTIONS ONLY =====
+// ===== SETUP DIRECT EVENT LISTENERS =====
+function setupDirectEventListeners() {
+  console.log('🔗 Setting up direct event listeners...');
+  
+  // Direct listener for Recommend Trees button
+  const recommendBtn = document.getElementById('recommendBtn');
+  if (recommendBtn) {
+    recommendBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleRecommendation();
+    });
+  }
+  
+  // Direct listeners for Next/Prev buttons
+  document.querySelectorAll('.next-step').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      goToNextStep();
+    });
+  });
+  
+  document.querySelectorAll('.prev-step').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      goToPrevStep();
+    });
+  });
+  
+  // Direct listener for goal chips
+  document.querySelectorAll('#goalChips .chip').forEach(chip => {
+    chip.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.toggle('active');
+    });
+  });
+  
+  // Direct listener for soil assessment options
+  document.querySelectorAll('.assessment-option').forEach(option => {
+    option.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const radio = this.querySelector('input[type="radio"]');
+      const parent = this.closest('.assessment-question');
+      
+      // Update visual selection
+      if (parent) {
+        parent.querySelectorAll('.assessment-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+      }
+      this.classList.add('selected');
+      
+      // Check the radio button
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change'));
+      }
+      
+      // Update radar chart
+      setTimeout(() => {
+        if(document.getElementById('soilHealthRadar')) updateRadarChart();
+      }, 100);
+    });
+  });
+  
+  // Direct listener for Detect Soil Data button
+  const detectSoilBtn = document.getElementById('detectSoilData');
+  if (detectSoilBtn) {
+    detectSoilBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      detectSoilAndClimateData();
+    });
+  }
+  
+  // Direct listener for Satellite Scan button
+  const analyzeHealthBtn = document.getElementById('analyzeHealthBtn');
+  if (analyzeHealthBtn) {
+    analyzeHealthBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (userLocation) {
+        analyzeForestHealth(userLocation.latitude, userLocation.longitude);
+      } else {
+        showNotification("Please 'Detect Location' first.", "warning");
+      }
+    });
+  }
+  
+  // Direct listener for project type options
+  document.querySelectorAll('.project-type-option').forEach(option => {
+    option.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.querySelectorAll('.project-type-option').forEach(opt => opt.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+  
+  console.log('✅ Direct event listeners setup complete');
+}
 
+// ===== NAVIGATION FUNCTIONS =====
 function initializeNavigation() {
     const navOrb = document.getElementById('navOrb');
     const navMenu = document.getElementById('navMenu');
@@ -3316,15 +3412,12 @@ function initializeNavigation() {
     });
 }
 
-/**
- * Toggles the navigation menu open and closed.
- */
 function toggleMenu() {
   const navMenu = document.getElementById('navMenu');
   const navOrb = document.getElementById('navOrb');
   const icon = navOrb.querySelector('i');
   
-  isMenuOpen = !isMenuOpen; // You might need to define 'let isMenuOpen = false;' at the top of your file
+  isMenuOpen = !isMenuOpen;
   navMenu.classList.toggle('active', isMenuOpen);
   
   if (icon) {
@@ -3332,15 +3425,11 @@ function toggleMenu() {
   }
 }
 
-/**
- * Closes the navigation menu.
- */
 function closeMenu() {
   const navMenu = document.getElementById('navMenu');
   const navOrb = document.getElementById('navOrb');
   const icon = navOrb.querySelector('i');
   
-  // You'll need 'isMenuOpen' for this too
   if (isMenuOpen) {
     isMenuOpen = false;
     navMenu.classList.remove('active');
@@ -3351,10 +3440,6 @@ function closeMenu() {
   }
 }
 
-/**
- * Hides the current page and shows the new page.
- * @param {string} pageName - The key of the page from the 'pages' config object.
- */
 function showPage(pageName) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   
@@ -3384,9 +3469,8 @@ function showPage(pageName) {
   currentPage = pageName;
   pageHistory.push(pageName);
 
-  // FIX: Only update UI elements, do not re-bind listeners
+  // Update UI elements for soil health page
   if (pageName === 'soil-health') {
-     // Small delay to ensure DOM is visible for Canvas
      setTimeout(() => {
        if(document.getElementById('soilHealthRadar')) updateRadarChart(); 
        if(typeof updateSoilHealthHistory === 'function') updateSoilHealthHistory();
@@ -3481,7 +3565,7 @@ function sendChatMessage() {
   contentEl.textContent = "Thinking...";
   responseEl.classList.remove('hidden');
   
-  // Simulate AI response (Replace with actual OpenAI API call)
+  // Simulate AI response
   setTimeout(() => {
     const responses = [
       "I can help you with tree selection and planting advice. For detailed species information, use the recommendation tool above.",
@@ -3546,83 +3630,13 @@ async function initApp() {
     showLoading();
 
     // ============================================================
-    // 1. UNIVERSAL EVENT DELEGATION (THE MASTER LISTENER)
+    // 1. SET UP DIRECT EVENT LISTENERS FIRST (CRITICAL FIX)
     // ============================================================
-    document.body.addEventListener('click', function(e) {
-      const target = e.target;
-
-      // A. Restoration Goal Chips (Using the correct 'chip' class from your HTML)
-      if (target.closest('.chip') && target.closest('#goalChips')) {
-        const chip = target.closest('.chip');
-        chip.classList.toggle('active');
-      }
-
-      // B. Recommend Trees Button
-      if (target.closest('#recommendBtn')) {
-        e.preventDefault();
-        handleRecommendation();
-      }
-
-      // C. Wizard Navigation (Next)
-      if (target.closest('.next-step')) {
-        e.preventDefault();
-        e.stopPropagation();
-        goToNextStep();
-      }
-      
-      // D. Wizard Navigation (Prev)
-      if (target.closest('.prev-step')) {
-        e.preventDefault();
-        e.stopPropagation();
-        goToPrevStep();
-      }
-
-      // E. Detect Soil Data Button
-      if (target.closest('#detectSoilData')) {
-        e.preventDefault();
-        detectSoilAndClimateData();
-      }
-
-      // F. Satellite Scan Button
-      if (target.closest('#analyzeHealthBtn')) {
-        e.preventDefault();
-        if (userLocation) {
-          analyzeForestHealth(userLocation.latitude, userLocation.longitude);
-        } else {
-          showNotification("Please 'Detect Location' first.", "warning");
-        }
-      }
-
-      // G. Project Type Selection
-      if (target.closest('.project-type-option')) {
-         const option = target.closest('.project-type-option');
-         document.querySelectorAll('.project-type-option').forEach(opt => opt.classList.remove('selected'));
-         option.classList.add('selected');
-      }
-
-      // H. Soil Assessment Questions (Radio Buttons)
-      // NOTE: We do NOT use preventDefault() here so the radio button actually gets checked!
-      if (target.closest('.assessment-option')) {
-        const option = target.closest('.assessment-option');
-        const radio = option.querySelector('input[type="radio"]');
-        
-        // Visual Update
-        const parent = option.closest('.assessment-question');
-        if (parent) {
-            parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
-        }
-        option.classList.add('selected');
-        
-        // Manual check ensures it works even if clicking the div/icon
-        if (radio) radio.checked = true;
-
-        // Update radar chart immediately if visible
-        if(document.getElementById('soilHealthRadar')) setTimeout(updateRadarChart, 100);
-      }
-    });
+    setupDirectEventListeners();
+    
     // ============================================================
-
-    // Initialize UI components
+    // 2. Initialize UI components
+    // ============================================================
     initTheme();
     createParticles();
     initScrollAnimations();
@@ -3636,16 +3650,22 @@ async function initApp() {
     initLocationDetection();
     initializeNavigation();
 
-    // Load Data
+    // ============================================================
+    // 3. Load Data
+    // ============================================================
     speciesData = await loadSpecies();
     initForm(speciesData);
     initRecommendationEngine(speciesData);
     initMappingSystem();
 
-    // Initialize Soil Health State (but don't add listeners!)
+    // ============================================================
+    // 4. Initialize Soil Health State
+    // ============================================================
     if (typeof loadSoilHealthHistory === 'function') loadSoilHealthHistory();
 
-    // Load URL Data
+    // ============================================================
+    // 5. Load URL Data
+    // ============================================================
     loadFromURL();
 
     hideLoading();
@@ -3665,7 +3685,6 @@ class ForestWiseAI {
     this.currentContext = '';
   }
 
-  // REPLACEMENT for the sendMessage method in main.js
   async sendMessage(message, imageFile = null) {
     if (this.isProcessing) {
       throw new Error('Already processing a message');
@@ -3682,33 +3701,26 @@ class ForestWiseAI {
       const userMessage = { role: "user", content: message };
       this.conversationHistory.push(userMessage);
 
-      // --- NEW LOGIC: CLIENT-SIDE RAG (Retrieval Augmented Generation) ---
-      // Instead of sending the whole DB, we find the relevant trees first.
-      
+      // Client-side RAG (Retrieval Augmented Generation)
       let relevantContext = "No specific database records found.";
       
-      // Access the global speciesData variable
       if (speciesData && speciesData.length > 0) {
-        // Configure Fuse to look for matches in Name, Common Name, and Uses
         const fuse = new Fuse(speciesData, {
           keys: [
             'Species Name', 
             'Common Name', 
             'Restoration Goal', 
-            'Local Names.Hausa', 
-            'Local Names.Yoruba', 
-            'Local Names.Igbo',
+            'LocalNames.Hausa', 
+            'LocalNames.Yoruba', 
+            'LocalNames.Igbo',
             'PlantingGuide.specialInstructions'
           ],
-          threshold: 0.6, // Relaxed from 0.4 to catch more results
+          threshold: 0.6,
           ignoreLocation: true,
           distance: 200
         });
 
-        // Search the user's message against the database
         const results = fuse.search(message);
-        
-        // Take the top 3 results only
         const topMatches = results.slice(0, 3).map(r => r.item);
         
         if (topMatches.length > 0) {
@@ -3716,9 +3728,8 @@ class ForestWiseAI {
           console.log(`🔍 Smart Search found ${topMatches.length} relevant trees.`);
         }
       }
-      // -------------------------------------------------------------------
 
-      // Send to your Cloudflare Backend
+      // Send to Cloudflare Backend
       const response = await fetch('/forestwise-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3727,7 +3738,6 @@ class ForestWiseAI {
           conversationHistory: this.conversationHistory,
           imageData: imageData,
           context: this.currentContext,
-          // WE SEND ONLY THE RELEVANT DATA NOW (Tiny payload!)
           speciesSnippet: relevantContext 
         })
       });
@@ -3748,11 +3758,7 @@ class ForestWiseAI {
     } catch (error) {
       console.error('AI Connection Failed:', error);
       
-      // --- THE ULTIMATE SAFETY NET ---
-      // If the AI/Internet fails, we STILL show the user the local data we found.
-      // This ensures the professor always sees a result.
-      
-      // 1. Re-run the local search (since we can't access 'relevantContext' from inside catch easily)
+      // Fallback response
       let fallbackResponse = "I'm having trouble connecting to the server, and I couldn't find local data for that.";
       
       if (speciesData && speciesData.length > 0) {
@@ -3764,7 +3770,6 @@ class ForestWiseAI {
         
         if (results.length > 0) {
           const topMatch = results[0].item;
-          // Format a basic response locally without AI
           fallbackResponse = `**[OFFLINE MODE]** Server unreachable, but I found this in your database:\n\n` +
             `**Species:** ${topMatch['Species Name']}\n` +
             `**Common Name:** ${topMatch['Common Name'] || 'N/A'}\n` +
@@ -3773,10 +3778,8 @@ class ForestWiseAI {
         }
       }
 
-      // 2. Remove the failed user message from history so it doesn't break context
       this.conversationHistory.pop();
       
-      // 3. Return the fallback instead of throwing an error
       return fallbackResponse; 
       
     } finally {
@@ -3892,7 +3895,7 @@ function initEnhancedChatWidget() {
   if (chatInput) chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
 }
 
-// Add this to your main.js file
+// ===== RESPONSIVE LAYOUT ADJUSTMENTS =====
 function adjustToolLayout() {
   const toolSection = document.getElementById('tool');
   if (!toolSection) return;
@@ -3900,10 +3903,8 @@ function adjustToolLayout() {
   const screenWidth = window.innerWidth;
   
   if (screenWidth < 480) {
-    // Add a special class for extra-small screens
     toolSection.classList.add('xs-screen');
     
-    // Adjust grid containers
     const glassContainers = toolSection.querySelectorAll('.glass');
     glassContainers.forEach(container => {
       container.style.maxWidth = '100%';
@@ -3914,11 +3915,6 @@ function adjustToolLayout() {
   }
 }
 
-// Run on load and resize
-window.addEventListener('load', adjustToolLayout);
-window.addEventListener('resize', adjustToolLayout);
-
-// Function to adjust slideshow for small screens
 function adjustSlideshowForSmallPhones() {
   const slideshow = document.getElementById('natureSlideshow');
   if (!slideshow) return;
@@ -3927,10 +3923,8 @@ function adjustSlideshowForSmallPhones() {
   const slideshowContainer = slideshow.querySelector('.relative.h-96.rounded-2xl.overflow-hidden.shadow-2xl');
   
   if (screenWidth < 480 && slideshowContainer) {
-    // Add a class for extra small screens
     slideshowContainer.classList.add('xs-screen-slideshow');
     
-    // For very small phones, make it even more stretched
     if (screenWidth < 360) {
       slideshowContainer.style.marginLeft = '0.125rem';
       slideshowContainer.style.marginRight = '0.125rem';
@@ -3941,32 +3935,15 @@ function adjustSlideshowForSmallPhones() {
   }
 }
 
-// Run on load and resize
-window.addEventListener('load', () => {
-  adjustSlideshowForSmallPhones();
-  // Also call adjustToolLayout if you added that earlier
-  if (typeof adjustToolLayout === 'function') adjustToolLayout();
-});
-
-window.addEventListener('resize', () => {
-  adjustSlideshowForSmallPhones();
-  if (typeof adjustToolLayout === 'function') adjustToolLayout();
-});
-
 // ===== START THE APP =====
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
   initApp();
 }
-// ================================================================
-// CRITICAL: EXPOSE FUNCTIONS TO HTML
-// (This fixes buttons inside dynamic cards, maps, and modals)
-// ================================================================
 
 // ================================================================
-// CRITICAL: EXPOSE FUNCTIONS TO HTML
-// (This fixes buttons inside dynamic cards, maps, and modals)
+// CRITICAL: EXPOSE FUNCTIONS TO HTML GLOBALLY
 // ================================================================
 
 // 1. Projects & Maps
@@ -3997,26 +3974,21 @@ window.askOnyxWhy = function(speciesName, btnId) {
     askOnyxWhy(speciesName, btnId);
 };
 
+// 5. Navigation & Assessment
+window.goToNextStep = goToNextStep;
+window.goToPrevStep = goToPrevStep;
+window.detectSoilAndClimateData = detectSoilAndClimateData;
+window.analyzeForestHealth = analyzeForestHealth;
+window.updateRadarChart = updateRadarChart;
+window.calculateCurrentScores = calculateCurrentScores;
 
+// Run responsive adjustments on load and resize
+window.addEventListener('load', () => {
+  adjustSlideshowForSmallPhones();
+  adjustToolLayout();
+});
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+window.addEventListener('resize', () => {
+  adjustSlideshowForSmallPhones();
+  adjustToolLayout();
+});
