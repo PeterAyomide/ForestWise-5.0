@@ -2289,6 +2289,12 @@ html {
     background-color: #111827 !important;
     border: 1px solid rgba(255,255,255,0.1);
 }
+    /* 🔧 FIX: enable clicks on restoration goals */
+.restoration-goal,
+.restoration-goal * {
+  pointer-events: auto !important;
+  cursor: pointer;
+}
   </style>
 </head>
 <body class="bg-forest-50 text-forest-800 dark:bg-forest-900 dark:text-forest-100 transition-all duration-700">
@@ -3413,6 +3419,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
