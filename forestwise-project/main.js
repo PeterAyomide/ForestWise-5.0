@@ -281,104 +281,19 @@ function initSoilHealthAssessment() {
     const element = document.getElementById(id);
     console.log(`Soil Health Element ${id}:`, element ? 'EXISTS' : 'MISSING');
   });
-
-  // Event listeners for wizard navigation - with safety checks
-  const nextButtons = document.querySelectorAll('.next-step');
-  const prevButtons = document.querySelectorAll('.prev-step');
+// Load soil health history
+  loadSoilHealthHistory();
   
-  if (nextButtons.length > 0) {
-    nextButtons.forEach(btn => {
-      btn.addEventListener('click', goToNextStep);
-    });
-    console.log(`✅ Added ${nextButtons.length} next-step listeners`);
-  } else {
-    console.warn('❌ No .next-step buttons found');
+  // If navigating directly to results/radar step, ensure chart draws
+  const activeStep = document.querySelector('.wizard-step.active');
+  if (activeStep && activeStep.dataset.step === '2') {
+    setTimeout(() => {
+      if(document.getElementById('soilHealthRadar')) updateRadarChart();
+    }, 100);
   }
   
-  if (prevButtons.length > 0) {
-    prevButtons.forEach(btn => {
-      btn.addEventListener('click', goToPrevStep);
-    });
-    console.log(`✅ Added ${prevButtons.length} prev-step listeners`);
-  } else {
-    console.warn('❌ No .prev-step buttons found');
-  }
-  
-  // Soil data detection
-  const detectBtn = document.getElementById('detectSoilData');
-  if (detectBtn) {
-    detectBtn.addEventListener('click', detectSoilAndClimateData);
-    console.log('✅ Added detectSoilData listener');
-  } else {
-    console.warn('❌ detectSoilData button not found');
-  }
-  
-  const refreshBtn = document.getElementById('refreshApiData');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', refreshApiData);
-    console.log('✅ Added refreshApiData listener');
-  }
-  
-  // Restart assessment
-  const restartBtn = document.getElementById('restartAssessment');
-  if (restartBtn) {
-    restartBtn.addEventListener('click', restartAssessment);
-    console.log('✅ Added restartAssessment listener');
-  }
-  
-  // Data confirmation buttons
-  const confirmButtons = document.querySelectorAll('.confirm-data');
-  if (confirmButtons.length > 0) {
-    confirmButtons.forEach(btn => {
-      btn.addEventListener('click', function() {
-        const isAccurate = this.dataset.confirm === 'true';
-        handleDataConfirmation(isAccurate);
-      });
-    });
-    console.log(`✅ Added ${confirmButtons.length} confirm-data listeners`);
-  }
-
-  const analyzeBtn = document.getElementById('analyzeHealthBtn');
-  if (analyzeBtn) {
-    analyzeBtn.addEventListener('click', () => {
-      if (userLocation) {
-        analyzeForestHealth(userLocation.latitude, userLocation.longitude);
-      } else {
-        showNotification("Please 'Detect Location' first.", "warning");
-        const detectBtn = document.getElementById('detectSoilData');
-        detectBtn.classList.add('pulse');
-        setTimeout(() => detectBtn.classList.remove('pulse'), 2000);
-      }
-    });
-  }
-  
-  // Assessment option selection
-  const assessmentOptions = document.querySelectorAll('.assessment-option');
-  if (assessmentOptions.length > 0) {
-    assessmentOptions.forEach(option => {
-      option.addEventListener('click', function() {
-        const radio = this.querySelector('input[type="radio"]');
-        if (radio) {
-          radio.checked = true;
-          // Update visual selection
-          const parent = this.closest('.assessment-question');
-          if (parent) {
-            parent.querySelectorAll('.assessment-option').forEach(opt => {
-              opt.classList.remove('selected');
-            });
-          }
-          this.classList.add('selected');
-          
-          // Update radar chart if on step 2
-          const activeStep = document.querySelector('.wizard-step.active');
-          if (activeStep && activeStep.dataset.step === '2') {
-            setTimeout(() => updateRadarChart(), 100);
-          }
-        }
-      });
-    });
-    console.log(`✅ Added ${assessmentOptions.length} assessment-option listeners`);
-  }
+  console.log('✅ Soil health assessment fully initialized');
+ 
   
   // Load soil health history
   loadSoilHealthHistory();
@@ -3459,54 +3374,40 @@ function closeMenu() {
  */
 function showPage(pageName) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  // You will need to make sure 'pages', 'currentPage', and 'pageHistory' are defined globally in your script
   
-  // Check if page exists in config
-  if (!pages[pageName]) {
-    console.error(`Page "${pageName}" is not defined in the pages configuration.`);
-    return;
-  }
-
-  // Don't switch if already on the page
-  if (pageName === currentPage) {
-    return;
-  }
+  if (!pages[pageName]) return;
+  if (pageName === currentPage) return;
 
   const newPageId = pages[pageName].id;
   const newPage = document.getElementById(newPageId);
-
-  // Find current active page
   const oldPage = document.querySelector('.page.active');
 
-  // Update menu active class
+  // Update Menu Active State
   document.querySelectorAll('.menu-item').forEach(item => {
     item.classList.toggle('active', item.dataset.page === pageName);
   });
 
-  // Animate out the old page
+  // Animations
   if (oldPage) {
     oldPage.classList.add('exit');
     oldPage.classList.remove('active');
-    
-    // Wait for the animation (0.6s defined in your CSS) to finish before removing exit class
-    setTimeout(() => {
-      oldPage.classList.remove('exit');
-    }, 600);
+    setTimeout(() => oldPage.classList.remove('exit'), 600);
   }
 
-  // Animate in the new page
   if (newPage) {
     newPage.classList.add('active');
   }
 
-  // Update global state
   currentPage = pageName;
   pageHistory.push(pageName);
-  // 🔧 FIX: initialize soil health wizard when page opens
-  if (page === 'soil-health') {
+
+  // FIX: Only update UI elements, do not re-bind listeners
+  if (pageName === 'soil-health') {
+     // Small delay to ensure DOM is visible for Canvas
      setTimeout(() => {
-       initSoilHealthAssessment();
-     }, 0);
+       if(document.getElementById('soilHealthRadar')) updateRadarChart(); 
+       if(typeof updateSoilHealthHistory === 'function') updateSoilHealthHistory();
+     }, 100);
    }
 }
 
@@ -3652,26 +3553,56 @@ async function loadSpecies() {
 
 // ===== MAIN INITIALIZATION =====
 async function initApp() {
-if ('scrollRestoration' in history) {
+  if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
   window.scrollTo(0, 0);
-  
+
   try {
     console.log('🚀 Starting SilviQ app...');
-    // --- START FIX: GLOBAL BUTTON LISTENER ---
-    document.addEventListener('click', function(e) {
-      // 1. Soil Health "Next Step" Buttons
+    showLoading();
+
+    // ============================================================
+    // 1. UNIVERSAL EVENT DELEGATION (THE MASTER LISTENER)
+    // ============================================================
+    document.body.addEventListener('click', function(e) {
+      
+      // A. Restoration Goal Chips (Fixes "Goals" not selecting)
+      if (e.target.closest('.chip')) {
+        const chip = e.target.closest('.chip');
+        // Only toggle if it's inside the goalChips container to avoid side effects
+        if (chip.parentElement.id === 'goalChips') {
+            chip.classList.toggle('active');
+        }
+      }
+
+      // B. Recommend Trees Button (Fixes "Recommend" button)
+      if (e.target.closest('#recommendBtn')) {
+        e.preventDefault();
+        handleRecommendation();
+      }
+
+      // C. Wizard Navigation (Next) - Fixes "Next Step" buttons
       if (e.target.closest('.next-step')) {
         e.preventDefault();
+        e.stopPropagation();
         goToNextStep();
       }
-      // 2. Soil Health "Detect Location" Button
+      
+      // D. Wizard Navigation (Prev) - Fixes "Previous Step" buttons
+      if (e.target.closest('.prev-step')) {
+        e.preventDefault();
+        e.stopPropagation();
+        goToPrevStep();
+      }
+
+      // E. Detect Soil Data Button
       if (e.target.closest('#detectSoilData')) {
         e.preventDefault();
         detectSoilAndClimateData();
       }
-      // 3. Satellite Scan Button
+
+      // F. Satellite Scan Button
       if (e.target.closest('#analyzeHealthBtn')) {
         e.preventDefault();
         if (userLocation) {
@@ -3680,16 +3611,33 @@ if ('scrollRestoration' in history) {
           showNotification("Please 'Detect Location' first.", "warning");
         }
       }
-      // 4. Restoration Goal Chips
-      if (e.target.closest('.chip')) {
-        const chip = e.target.closest('.chip');
-        chip.classList.toggle('active');
+
+      // G. Project Type Selection
+      if (e.target.closest('.project-type-option')) {
+         const option = e.target.closest('.project-type-option');
+         document.querySelectorAll('.project-type-option').forEach(opt => opt.classList.remove('selected'));
+         option.classList.add('selected');
+      }
+
+      // H. Soil Assessment Questions (Radio Buttons)
+      if (e.target.closest('.assessment-option')) {
+        const option = e.target.closest('.assessment-option');
+        const radio = option.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
+            const parent = option.closest('.assessment-question');
+            if (parent) {
+                parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
+            }
+            option.classList.add('selected');
+            // Update radar chart immediately if visible
+            if(document.getElementById('soilHealthRadar')) setTimeout(updateRadarChart, 100);
+        }
       }
     });
-    // --- END FIX ---
-    showLoading();
+    // ============================================================
 
-    // Initialize basic UI first
+    // Initialize UI components
     initTheme();
     createParticles();
     initScrollAnimations();
@@ -3702,30 +3650,18 @@ if ('scrollRestoration' in history) {
     initNewFeatures();
     initLocationDetection();
     initializeNavigation();
-    
-    // Load data and initialize data-dependent features
+
+    // Load Data
     speciesData = await loadSpecies();
     initForm(speciesData);
     initRecommendationEngine(speciesData);
-    
-    // Initialize mapping system
     initMappingSystem();
-    
-    // Initialize soil health assessment - only if on that page or element exists
-    if (document.getElementById('soil-health-page') || document.getElementById('soilHealthSection')) {
-      console.log('🟢 Initializing soil health assessment...');
-      initSoilHealthAssessment();
-    } else {
-      console.log('🟡 Soil health page not found, skipping initialization');
-    }
-    
-    // Load shared data from URL if present
-    loadFromURL();
 
-    // Scroll-to-tool button
-    document.getElementById('getStartedBtn')?.addEventListener('click', () => {
-      document.getElementById('tool').scrollIntoView({ behavior: 'smooth' });
-    });
+    // Initialize Soil Health State (but don't add listeners!)
+    if (typeof loadSoilHealthHistory === 'function') loadSoilHealthHistory();
+
+    // Load URL Data
+    loadFromURL();
 
     hideLoading();
     console.log('✅ Enhanced ForestWise app fully loaded!');
@@ -3733,11 +3669,6 @@ if ('scrollRestoration' in history) {
   } catch (error) {
     console.error('❌ App initialization failed:', error);
     hideLoading();
-    
-    // Show error to user
-    setTimeout(() => {
-      alert('Failed to load the application. Please check your console for details and refresh the page.');
-    }, 1000);
   }
 }
 
@@ -4043,34 +3974,38 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
-// ==========================================
-// CRITICAL FIX: EXPOSE FUNCTIONS TO HTML
-// ==========================================
+// ================================================================
+// CRITICAL: EXPOSE FUNCTIONS TO HTML
+// (This fixes buttons inside dynamic cards, maps, and modals)
+// ================================================================
+
+// 1. Projects & Maps
 window.viewProjectDetails = viewProjectDetails;
 window.editProject = editProject;
 window.deleteProject = deleteProject;
+window.addNewProject = addNewProject;        // <--- MISSING IN YOURS
 window.addToMapFromSpecies = addToMapFromSpecies;
+window.generateAIProjectPlan = generateAIProjectPlan; // <--- MISSING IN YOURS
+
+// 2. Modals & Info
 window.showWikiModal = showWikiModal;
+window.loadPlantingGuide = loadPlantingGuide; // <--- MISSING IN YOURS
+window.showPage = showPage;                   // <--- MISSING IN YOURS
+window.restartAssessment = restartAssessment; // <--- MISSING IN YOURS
+
+// 3. User Actions
 window.toggleFavorite = toggleFavorite;
-window.addToCalendar = function(name) { showNotification('Added ' + name + ' to planting calendar', 'success'); };
-// End of main.js
-// 🔧 FIX: restoration goal buttons click handler
-document.addEventListener('DOMContentLoaded', () => {
-  const goals = document.querySelectorAll('.restoration-goal');
+window.addToCalendar = function(name) { 
+    showNotification('Added ' + name + ' to planting calendar', 'success'); 
+};
+window.copyShareableURL = copyShareableURL;   // <--- MISSING IN YOURS
+window.exportToPDF = exportToPDF;             // <--- MISSING IN YOURS
+window.handleRecommendation = handleRecommendation; 
 
-  console.log('Restoration goals found:', goals.length);
-
-  goals.forEach(goal => {
-    goal.addEventListener('click', () => {
-      const selected = goal.dataset.goal;
-      console.log('Selected restoration goal:', selected);
-
-      // visual feedback
-      goals.forEach(g => g.classList.remove('selected'));
-      goal.classList.add('selected');
-    });
-  });
-});
+// 4. AI Interaction (The "Why" buttons)
+window.askOnyxWhy = function(speciesName, btnId) { // <--- MISSING IN YOURS
+    askOnyxWhy(speciesName, btnId);
+};
 
 
 
