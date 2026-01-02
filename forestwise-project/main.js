@@ -3291,35 +3291,40 @@ document.getElementById('recommendation-page').addEventListener('click', functio
   }
 });
 
-  // ✅ DELEGATED: Next/Prev step buttons
+// ✅ DELEGATED: Soil Health page interactions (Next/Prev + Assessment Options)
 document.getElementById('soil-health-page').addEventListener('click', function(e) {
+  // Handle Next/Prev buttons
   if (e.target.matches('.next-step')) {
     e.preventDefault();
     goToNextStep();
-  } else if (e.target.matches('.prev-step')) {
+    return;
+  }
+  if (e.target.matches('.prev-step')) {
     e.preventDefault();
     goToPrevStep();
+    return;
+  }
+
+  // Handle Assessment Options
+  const option = e.target.closest('.assessment-option');
+  if (option) {
+    e.preventDefault();
+    const radio = option.querySelector('input[type="radio"]');
+    const parent = option.closest('.assessment-question');
+    if (parent) {
+      parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
+    }
+    option.classList.add('selected');
+    if (radio) {
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change'));
+    }
+    setTimeout(() => {
+      if (document.getElementById('soilHealthRadar')) updateRadarChart();
+    }, 100);
+    return;
   }
 });
-  
- // ✅ DELEGATED: Assessment options
-const option = e.target.closest('.assessment-option');
-if (option) {
-  e.preventDefault();
-  const radio = option.querySelector('input[type="radio"]');
-  const parent = option.closest('.assessment-question');
-  if (parent) {
-    parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
-  }
-  option.classList.add('selected');
-  if (radio) {
-    radio.checked = true;
-    radio.dispatchEvent(new Event('change'));
-  }
-  setTimeout(() => {
-    if(document.getElementById('soilHealthRadar')) updateRadarChart();
-  }, 100);
-}
   
   // Direct listener for Detect Soil Data button
   const detectSoilBtn = document.getElementById('detectSoilData');
@@ -3975,4 +3980,5 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
