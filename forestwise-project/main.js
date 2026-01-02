@@ -3502,6 +3502,12 @@ function showPage(pageName) {
   // Update global state
   currentPage = pageName;
   pageHistory.push(pageName);
+  // 🔧 FIX: initialize soil health wizard when page opens
+  if (page === 'soil-health') {
+     setTimeout(() => {
+       initSoilHealthAssessment();
+     }, 0);
+   }
 }
 
 // ===== PLANTING GUIDE TAB SYSTEM =====
@@ -4048,6 +4054,24 @@ window.showWikiModal = showWikiModal;
 window.toggleFavorite = toggleFavorite;
 window.addToCalendar = function(name) { showNotification('Added ' + name + ' to planting calendar', 'success'); };
 // End of main.js
+// 🔧 FIX: restoration goal buttons click handler
+document.addEventListener('DOMContentLoaded', () => {
+  const goals = document.querySelectorAll('.restoration-goal');
+
+  console.log('Restoration goals found:', goals.length);
+
+  goals.forEach(goal => {
+    goal.addEventListener('click', () => {
+      const selected = goal.dataset.goal;
+      console.log('Selected restoration goal:', selected);
+
+      // visual feedback
+      goals.forEach(g => g.classList.remove('selected'));
+      goal.classList.add('selected');
+    });
+  });
+});
+
 
 
 
