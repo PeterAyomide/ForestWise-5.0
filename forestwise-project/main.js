@@ -2783,12 +2783,8 @@ function setupPHSliders() {
 }
 
 function setupGoalChips() {
-  const chips = document.querySelectorAll('#goalChips .chip');
-  chips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      chip.classList.toggle('active');
-    });
-  });
+  // Event listeners are now handled by the global listener in initApp
+  console.log('Goal chips ready');
 }
 
 function getFormValues() {
@@ -4052,6 +4048,7 @@ window.showWikiModal = showWikiModal;
 window.toggleFavorite = toggleFavorite;
 window.addToCalendar = function(name) { showNotification('Added ' + name + ' to planting calendar', 'success'); };
 // End of main.js
+
 
 
 
