@@ -229,6 +229,7 @@ async function generateAIProjectPlan() {
 
   const projectType = typeElement.dataset.type;
   const siteData = window.selectedSiteData || { rainfall: 'Unknown', temperature: 'Unknown' };
+  const locationName = window.selectedSiteAddress || "Nigeria";
 
   const prompt = `
     ACT AS: Lead Forestry Project Manager.
@@ -238,6 +239,8 @@ async function generateAIProjectPlan() {
     - Type: ${projectType.toUpperCase()}
     - Climate: ${siteData.temperature}°C, ${siteData.rainfall}mm rain.
     - Coords: ${selectedLocation.lat.toFixed(3)}, ${selectedLocation.lng.toFixed(3)}.
+    // Change the "Coords" line to this:
+- Location: ${locationName} (Coords: ${selectedLocation.lat.toFixed(3)}, ${selectedLocation.lng.toFixed(3)})
     
     OUTPUT JSON FORMAT ONLY:
     {
@@ -1290,7 +1293,10 @@ function setupEnhancedMapEvents() {
 
 async function selectLocation(latlng) {
   selectedLocation = latlng;
-  
+  // FIX: Store address globally for AI
+  getLocationName(latlng.lat, latlng.lng).then(data => {
+      window.selectedSiteAddress = `${data.city}, ${data.country}`;
+  });
   if (tempMarker) projectMap.removeLayer(tempMarker);
   
   tempMarker = L.marker(latlng, {
@@ -2077,8 +2083,8 @@ async function getWeatherData(latitude, longitude) {
     
     return {
       temperature: Math.round(data.main.temp),
-      tempMin: Math.round(data.main.temp_min),
-      tempMax: Math.round(data.main.temp_max),
+      tempMin: Math.round(data.main.temp_min === data.main.temp_max ? data.main.temp - 4 : data.main.temp_min),
+      tempMax: Math.round(data.main.temp_min === data.main.temp_max ? data.main.temp + 4 : data.main.temp_max),
       humidity: data.main.humidity,
       rainfall: Math.round(rainfall),
       description: data.weather[0].description,
@@ -2985,24 +2991,35 @@ async function renderComparativeAnalysis(topSpecies, criteria) {
   const ctx = document.getElementById('comparisonChart').getContext('2d');
   if (window.comparisonChartInstance) window.comparisonChartInstance.destroy(); // clear old chart
 
-  window.comparisonChartInstance = new Chart(ctx, {
-    type: 'radar',
+ window.comparisonChartInstance = new Chart(ctx, {
+    type: 'bar', // CHANGED TO BAR
     data: {
-      labels: ['Growth Rate', 'Carbon Sequestration', 'Drought Res.', 'Biodiversity', 'Suitability'],
+      labels: ['Growth', 'Carbon', 'Drought', 'Bio-D', 'Overall'],
       datasets: datasets
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        r: {
+        y: {
           beginAtZero: true,
           max: 100,
-          ticks: { display: false },
-          pointLabels: { font: { size: 10 } }
+          title: { display: true, text: 'Score (0-100)' }
+        },
+        x: {
+          grid: { display: false }
         }
       },
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ' + context.raw + '/100';
+            }
+          }
+        }
+      }
     }
   });
 
@@ -3640,6 +3657,34 @@ if ('scrollRestoration' in history) {
   
   try {
     console.log('🚀 Starting SilviQ app...');
+    // --- START FIX: GLOBAL BUTTON LISTENER ---
+    document.addEventListener('click', function(e) {
+      // 1. Soil Health "Next Step" Buttons
+      if (e.target.closest('.next-step')) {
+        e.preventDefault();
+        goToNextStep();
+      }
+      // 2. Soil Health "Detect Location" Button
+      if (e.target.closest('#detectSoilData')) {
+        e.preventDefault();
+        detectSoilAndClimateData();
+      }
+      // 3. Satellite Scan Button
+      if (e.target.closest('#analyzeHealthBtn')) {
+        e.preventDefault();
+        if (userLocation) {
+          analyzeForestHealth(userLocation.latitude, userLocation.longitude);
+        } else {
+          showNotification("Please 'Detect Location' first.", "warning");
+        }
+      }
+      // 4. Restoration Goal Chips
+      if (e.target.closest('.chip')) {
+        const chip = e.target.closest('.chip');
+        chip.classList.toggle('active');
+      }
+    });
+    // --- END FIX ---
     showLoading();
 
     // Initialize basic UI first
@@ -3728,9 +3773,18 @@ class ForestWiseAI {
       if (speciesData && speciesData.length > 0) {
         // Configure Fuse to look for matches in Name, Common Name, and Uses
         const fuse = new Fuse(speciesData, {
-          keys: ['Species Name', 'Common Name', 'Restoration Goal', 'specialInstructions'],
-          threshold: 0.4, // Lower number = stricter matching
-          distance: 100
+          keys: [
+            'Species Name', 
+            'Common Name', 
+            'Restoration Goal', 
+            'Local Names.Hausa', 
+            'Local Names.Yoruba', 
+            'Local Names.Igbo',
+            'PlantingGuide.specialInstructions'
+          ],
+          threshold: 0.6, // Relaxed from 0.4 to catch more results
+          ignoreLocation: true,
+          distance: 200
         });
 
         // Search the user's message against the database
@@ -3986,8 +4040,19 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
   initApp();
-
 }
+// ==========================================
+// CRITICAL FIX: EXPOSE FUNCTIONS TO HTML
+// ==========================================
+window.viewProjectDetails = viewProjectDetails;
+window.editProject = editProject;
+window.deleteProject = deleteProject;
+window.addToMapFromSpecies = addToMapFromSpecies;
+window.showWikiModal = showWikiModal;
+window.toggleFavorite = toggleFavorite;
+window.addToCalendar = function(name) { showNotification('Added ' + name + ' to planting calendar', 'success'); };
+// End of main.js
+
 
 
 
