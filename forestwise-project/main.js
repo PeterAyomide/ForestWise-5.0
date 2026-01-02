@@ -270,21 +270,10 @@ async function generateAIProjectPlan() {
 function initSoilHealthAssessment() {
   console.log('🌱 Initializing enhanced soil health assessment...');
   
-  // Debug: Check if key elements exist
-  const requiredElements = [
-    'detectSoilData', 'apiStatus', 'autoDetectedData', 
-    'soilProperties', 'climateData', 'soilHealthRadar',
-    'soilResults', 'restartAssessment', 'refreshApiData'
-  ];
-  
-  requiredElements.forEach(id => {
-    const element = document.getElementById(id);
-    console.log(`Soil Health Element ${id}:`, element ? 'EXISTS' : 'MISSING');
-  });
-// Load soil health history
+  // 1. Load the history from local storage
   loadSoilHealthHistory();
   
-  // If navigating directly to results/radar step, ensure chart draws
+  // 2. If the user navigates directly to the results/radar step, ensure the chart draws
   const activeStep = document.querySelector('.wizard-step.active');
   if (activeStep && activeStep.dataset.step === '2') {
     setTimeout(() => {
@@ -292,13 +281,7 @@ function initSoilHealthAssessment() {
     }, 100);
   }
   
-  console.log('✅ Soil health assessment fully initialized');
- 
-  
-  // Load soil health history
-  loadSoilHealthHistory();
-  
-  console.log('✅ Soil health assessment fully initialized');
+  console.log('✅ Soil health assessment state ready');
 }
 
 async function detectSoilAndClimateData() {
@@ -3566,44 +3549,42 @@ async function initApp() {
     // 1. UNIVERSAL EVENT DELEGATION (THE MASTER LISTENER)
     // ============================================================
     document.body.addEventListener('click', function(e) {
-      
-      // A. Restoration Goal Chips (Fixes "Goals" not selecting)
-      if (e.target.closest('.chip')) {
-        const chip = e.target.closest('.chip');
-        // Only toggle if it's inside the goalChips container to avoid side effects
-        if (chip.parentElement.id === 'goalChips') {
-            chip.classList.toggle('active');
-        }
+      const target = e.target;
+
+      // A. Restoration Goal Chips (Using the correct 'chip' class from your HTML)
+      if (target.closest('.chip') && target.closest('#goalChips')) {
+        const chip = target.closest('.chip');
+        chip.classList.toggle('active');
       }
 
-      // B. Recommend Trees Button (Fixes "Recommend" button)
-      if (e.target.closest('#recommendBtn')) {
+      // B. Recommend Trees Button
+      if (target.closest('#recommendBtn')) {
         e.preventDefault();
         handleRecommendation();
       }
 
-      // C. Wizard Navigation (Next) - Fixes "Next Step" buttons
-      if (e.target.closest('.next-step')) {
+      // C. Wizard Navigation (Next)
+      if (target.closest('.next-step')) {
         e.preventDefault();
         e.stopPropagation();
         goToNextStep();
       }
       
-      // D. Wizard Navigation (Prev) - Fixes "Previous Step" buttons
-      if (e.target.closest('.prev-step')) {
+      // D. Wizard Navigation (Prev)
+      if (target.closest('.prev-step')) {
         e.preventDefault();
         e.stopPropagation();
         goToPrevStep();
       }
 
       // E. Detect Soil Data Button
-      if (e.target.closest('#detectSoilData')) {
+      if (target.closest('#detectSoilData')) {
         e.preventDefault();
         detectSoilAndClimateData();
       }
 
       // F. Satellite Scan Button
-      if (e.target.closest('#analyzeHealthBtn')) {
+      if (target.closest('#analyzeHealthBtn')) {
         e.preventDefault();
         if (userLocation) {
           analyzeForestHealth(userLocation.latitude, userLocation.longitude);
@@ -3613,26 +3594,30 @@ async function initApp() {
       }
 
       // G. Project Type Selection
-      if (e.target.closest('.project-type-option')) {
-         const option = e.target.closest('.project-type-option');
+      if (target.closest('.project-type-option')) {
+         const option = target.closest('.project-type-option');
          document.querySelectorAll('.project-type-option').forEach(opt => opt.classList.remove('selected'));
          option.classList.add('selected');
       }
 
       // H. Soil Assessment Questions (Radio Buttons)
-      if (e.target.closest('.assessment-option')) {
-        const option = e.target.closest('.assessment-option');
+      // NOTE: We do NOT use preventDefault() here so the radio button actually gets checked!
+      if (target.closest('.assessment-option')) {
+        const option = target.closest('.assessment-option');
         const radio = option.querySelector('input[type="radio"]');
-        if (radio) {
-            radio.checked = true;
-            const parent = option.closest('.assessment-question');
-            if (parent) {
-                parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
-            }
-            option.classList.add('selected');
-            // Update radar chart immediately if visible
-            if(document.getElementById('soilHealthRadar')) setTimeout(updateRadarChart, 100);
+        
+        // Visual Update
+        const parent = option.closest('.assessment-question');
+        if (parent) {
+            parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
         }
+        option.classList.add('selected');
+        
+        // Manual check ensures it works even if clicking the div/icon
+        if (radio) radio.checked = true;
+
+        // Update radar chart immediately if visible
+        if(document.getElementById('soilHealthRadar')) setTimeout(updateRadarChart, 100);
       }
     });
     // ============================================================
@@ -3979,33 +3964,39 @@ if (document.readyState === 'loading') {
 // (This fixes buttons inside dynamic cards, maps, and modals)
 // ================================================================
 
+// ================================================================
+// CRITICAL: EXPOSE FUNCTIONS TO HTML
+// (This fixes buttons inside dynamic cards, maps, and modals)
+// ================================================================
+
 // 1. Projects & Maps
 window.viewProjectDetails = viewProjectDetails;
 window.editProject = editProject;
 window.deleteProject = deleteProject;
-window.addNewProject = addNewProject;        // <--- MISSING IN YOURS
+window.addNewProject = addNewProject;
 window.addToMapFromSpecies = addToMapFromSpecies;
-window.generateAIProjectPlan = generateAIProjectPlan; // <--- MISSING IN YOURS
+window.generateAIProjectPlan = generateAIProjectPlan;
 
 // 2. Modals & Info
 window.showWikiModal = showWikiModal;
-window.loadPlantingGuide = loadPlantingGuide; // <--- MISSING IN YOURS
-window.showPage = showPage;                   // <--- MISSING IN YOURS
-window.restartAssessment = restartAssessment; // <--- MISSING IN YOURS
+window.loadPlantingGuide = loadPlantingGuide;
+window.showPage = showPage;
+window.restartAssessment = restartAssessment;
 
 // 3. User Actions
 window.toggleFavorite = toggleFavorite;
 window.addToCalendar = function(name) { 
     showNotification('Added ' + name + ' to planting calendar', 'success'); 
 };
-window.copyShareableURL = copyShareableURL;   // <--- MISSING IN YOURS
-window.exportToPDF = exportToPDF;             // <--- MISSING IN YOURS
+window.copyShareableURL = copyShareableURL;
+window.exportToPDF = exportToPDF;
 window.handleRecommendation = handleRecommendation; 
 
-// 4. AI Interaction (The "Why" buttons)
-window.askOnyxWhy = function(speciesName, btnId) { // <--- MISSING IN YOURS
+// 4. AI Interaction
+window.askOnyxWhy = function(speciesName, btnId) {
     askOnyxWhy(speciesName, btnId);
 };
+
 
 
 
