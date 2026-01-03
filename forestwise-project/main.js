@@ -3346,55 +3346,79 @@ function setupDirectEventListeners() {
     });
   }
 
-  // 8. CRITICAL FIX: Soil Health Page Interactions (Safe Wrap)
+  // ============================================================
+  // 8. CRITICAL FIX: Soil Health Page Buttons (The Missing Links)
+  // ============================================================
+  
+  // A. Detect Soil Data Button
+  const detectSoilBtn = document.getElementById('detectSoilData');
+  if (detectSoilBtn) {
+    detectSoilBtn.addEventListener('click', () => {
+      // Check if we have location, if not, try to get it
+      if (!userLocation) {
+        detectSoilBtn.innerHTML = '<div class="loading-spinner"></div> Detecting...';
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              userLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              };
+              detectSoilAndClimateData(); // Trigger the logic
+            },
+            (error) => {
+              console.error(error);
+              showNotification('Location access denied. Please enable GPS.', 'error');
+              detectSoilBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i> Retry Location';
+            }
+          );
+        } else {
+          showNotification('Geolocation is not supported.', 'error');
+        }
+      } else {
+        detectSoilAndClimateData(); // We already have location
+      }
+    });
+  }
+
+  // B. Satellite Scan Button
+  const analyzeHealthBtn = document.getElementById('analyzeHealthBtn');
+  if (analyzeHealthBtn) {
+    analyzeHealthBtn.addEventListener('click', () => {
+      if (!userLocation) {
+        showNotification('Please click "Detect Location" first.', 'warning');
+        return;
+      }
+      analyzeForestHealth(userLocation.latitude, userLocation.longitude);
+    });
+  }
+
+  // 9. Soil Health Page Steps (Next/Prev)
   const soilHealthPage = document.getElementById('soil-health-page');
   if (soilHealthPage) {
     soilHealthPage.addEventListener('click', function(e) {
-      // Handle Next Step
-      if (e.target.matches('.next-step')) {
+      if (e.target.matches('.next-step') || e.target.closest('.next-step')) {
         e.preventDefault();
         goToNextStep();
-        return;
       }
-
-      // Handle Prev Step
-      if (e.target.matches('.prev-step')) {
+      if (e.target.matches('.prev-step') || e.target.closest('.prev-step')) {
         e.preventDefault();
         goToPrevStep();
-        return;
       }
-
-      // Handle Assessment Options
+      // Handle Radio Selection Styling
       const option = e.target.closest('.assessment-option');
       if (option) {
         e.preventDefault();
         const radio = option.querySelector('input[type="radio"]');
         const parent = option.closest('.assessment-question');
-        
-        if (parent) {
-          parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
-        }
-        
+        if (parent) parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
-        
         if (radio) {
-          radio.checked = true;
-          // Trigger change event manually if needed
-          const event = new Event('change', { bubbles: true });
-          radio.dispatchEvent(event);
+            radio.checked = true;
+            if(document.getElementById('soilHealthRadar')) setTimeout(updateRadarChart, 100);
         }
-        
-        // Update radar chart safely
-        setTimeout(() => {
-          if (document.getElementById('soilHealthRadar') && typeof updateRadarChart === 'function') {
-            updateRadarChart();
-          }
-        }, 100);
-        return;
       }
     });
-  } else {
-    console.warn('⚠️ Notice: soil-health-page element not found. Skipping listeners for this section.');
   }
 
   console.log('✅ Direct event listeners setup complete');
@@ -4017,6 +4041,7 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
 
