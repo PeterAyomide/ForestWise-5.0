@@ -3330,53 +3330,42 @@ function setupDirectEventListeners() {
   }
 
   // 🌱 Soil Health Page Interactions (Next/Prev + Assessment Options)
-  const soilHealthPage = document.getElementById('soil-health-page');
-  if (soilHealthPage) {
-    soilHealthPage.addEventListener('click', function(e) {
-      // Next Step
-      if (e.target.matches('.next-step')) {
-        e.preventDefault();
-        goToNextStep();
-        return;
-      }
+ // ✅ DELEGATED: Soil Health page interactions (Next/Prev + Assessment Options)
+document.getElementById('soil-health-page').addEventListener('click', function(e) {
+  // Handle Next Step
+  if (e.target.matches('.next-step')) {
+    e.preventDefault();
+    goToNextStep();
+    return;
+  }
 
-      // Prev Step
-      if (e.target.matches('.prev-step')) {
-        e.preventDefault();
-        goToPrevStep();
-        return;
-      }
+  // Handle Prev Step
+  if (e.target.matches('.prev-step')) {
+    e.preventDefault();
+    goToPrevStep();
+    return;
+  }
 
-      // Assessment Option Selection
-      const option = e.target.closest('.assessment-option');
-      if (option) {
-        e.preventDefault();
-        const radio = option.querySelector('input[type="radio"]');
-        const parentQuestion = option.closest('.assessment-question');
-        
-        // Deselect siblings
-        if (parentQuestion) {
-          parentQuestion.querySelectorAll('.assessment-option').forEach(opt => {
-            opt.classList.remove('selected');
-          });
-        }
-
-        // Select current
-        option.classList.add('selected');
-        if (radio) {
-          radio.checked = true;
-          radio.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-
-        // Update radar chart after UI update
-        setTimeout(() => {
-          if (document.getElementById('soilHealthRadar')) {
-            updateRadarChart();
-          }
-        }, 50);
-        return;
-      }
-    });
+  // Handle Assessment Options
+  const option = e.target.closest('.assessment-option');
+  if (option) {
+    e.preventDefault();
+    const radio = option.querySelector('input[type="radio"]');
+    const parent = option.closest('.assessment-question');
+    if (parent) {
+      parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
+    }
+    option.classList.add('selected');
+    if (radio) {
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    setTimeout(() => {
+      if (document.getElementById('soilHealthRadar')) updateRadarChart();
+    }, 100);
+    return;
+  }
+});
   }
 
   console.log('✅ Direct event listeners setup complete');
@@ -3999,6 +3988,7 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
 
