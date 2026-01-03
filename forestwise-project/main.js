@@ -286,9 +286,9 @@ function initSoilHealthAssessment() {
   console.log('✅ Soil health assessment state ready');
 }
 
-// ===== FULLY CORRECTED FUNCTION =====
+// ===== ROBUST DATA DETECTION FUNCTION =====
 async function detectSoilAndClimateData() {
-  // 1. Safety Check: Do we have a location?
+  // 1. Safety Check
   if (!userLocation) {
     showNotification('Please detect your location first', 'warning');
     return;
@@ -298,65 +298,95 @@ async function detectSoilAndClimateData() {
   const apiStatus = document.getElementById('apiStatus');
   const autoDetectedData = document.getElementById('autoDetectedData');
   
-  // 2. UI: Show loading state
+  // 2. UI Loading
   if (detectBtn) {
-    detectBtn.innerHTML = '<div class="loading-spinner"></div> Fetching environmental data...';
+    detectBtn.innerHTML = '<div class="loading-spinner"></div> Fetching data...';
     detectBtn.disabled = true;
   }
-  
   if (apiStatus) apiStatus.classList.remove('hidden');
-  
+
   try {
-    // Update API status indicators
+    // 3. Update Status
     updateApiStatus('soil', 'loading');
     updateApiStatus('weather', 'loading');
     updateApiStatus('climate', 'loading');
-    
-    // 3. FETCH ALL DATA IN PARALLEL
+
+    // 4. Fetch Data (Individually Protected)
+    // We fetch them in parallel, but errors inside 'fetchXXX' are already caught and return fallbacks.
     const [soilData, climateData, weatherData] = await Promise.all([
       fetchSoilData(userLocation.latitude, userLocation.longitude),
       fetchClimateData(userLocation.latitude, userLocation.longitude),
       fetchWeatherData(userLocation.latitude, userLocation.longitude)
     ]);
-    
-    // === THE FIX IS HERE ===
-    // If we successfully got historical climate data, use that rainfall!
-    // This stops it from defaulting to "800mm" from the current weather API.
-    if (climateData && climateData.annualRainfall) {
-        console.log(`Overwriting weather rainfall (${weatherData.rainfall}mm) with climate average (${climateData.annualRainfall}mm)`);
-        weatherData.rainfall = climateData.annualRainfall;
-    }
-    // =======================
 
-    // 4. Display the corrected data
-    displayDetectedData(soilData, climateData, weatherData);
+    // 5. Intelligent Data Merging (Protected)
+    // Overwrite current weather rainfall with historical climate data if available
+    if (climateData && typeof climateData.annualRainfall === 'number') {
+        if (weatherData) {
+            console.log(`Overwriting weather rainfall (${weatherData.rainfall}mm) with climate average (${climateData.annualRainfall}mm)`);
+            weatherData.rainfall = climateData.annualRainfall;
+        }
+    }
+
+    // 6. Display Data (Decoupled to prevent one error hiding everything)
+    // We try to display soil. If it fails, we catch it so Climate still shows.
+    try {
+        displaySafeSoil(soilData);
+        updateApiStatus('soil', 'connected');
+    } catch (e) { console.error("Soil Display Error", e); updateApiStatus('soil', 'disconnected'); }
+
+    try {
+        displaySafeClimate(climateData, weatherData);
+        updateApiStatus('weather', 'connected');
+        updateApiStatus('climate', 'connected');
+    } catch (e) { console.error("Climate Display Error", e); updateApiStatus('climate', 'disconnected'); }
     
-    // Update API status to "Connected"
-    updateApiStatus('soil', 'connected');
-    updateApiStatus('weather', 'connected');
-    updateApiStatus('climate', 'connected');
-    
-    // Show the results box
+    // 7. Success State
     if (autoDetectedData) autoDetectedData.classList.remove('hidden');
-    
-    showNotification('Environmental data loaded successfully!', 'success');
-    
+    showNotification('Environmental data analysis complete.', 'success');
+
   } catch (error) {
-    console.error('Error fetching environmental data:', error);
-    showNotification('Failed to fetch some environmental data. Using fallback data.', 'error');
-    
-    updateApiStatus('soil', 'disconnected');
-    updateApiStatus('weather', 'disconnected');
-    updateApiStatus('climate', 'disconnected');
-    
-    displayFallbackData();
+    console.error('CRITICAL FAILURE in Detect:', error);
+    showNotification('Data processing failed. Switching to manual mode.', 'error');
+    displayFallbackData(); 
   } finally {
-    // 5. Reset button state
     if (detectBtn) {
       detectBtn.innerHTML = '<i class="fas fa-satellite mr-2"></i>Detect Soil & Climate Data';
       detectBtn.disabled = false;
     }
   }
+}
+
+// Helper: Safely Display Soil (Prevents Null Crashes)
+function displaySafeSoil(data) {
+    const el = document.getElementById('soilProperties');
+    if (!el) return;
+    
+    // Safety: Ensure data exists, otherwise use N/A
+    const safeFix = (val) => (val !== null && val !== undefined && typeof val === 'number') ? val.toFixed(1) : 'N/A';
+    
+    el.innerHTML = `
+      <div class="flex justify-between"><span>Clay Content:</span><span class="font-semibold">${safeFix(data.clay)}%</span></div>
+      <div class="flex justify-between"><span>Sand Content:</span><span class="font-semibold">${safeFix(data.sand)}%</span></div>
+      <div class="flex justify-between"><span>Silt Content:</span><span class="font-semibold">${safeFix(data.silt)}%</span></div>
+      <div class="flex justify-between"><span>Soil pH:</span><span class="font-semibold">${safeFix(data.phh2o)}</span></div>
+      <div class="flex justify-between"><span>Organic Carbon:</span><span class="font-semibold">${safeFix(data.soc)}%</span></div>
+      ${data.isFallback ? '<div class="text-xs text-yellow-600 mt-1">⚠️ Using estimated data</div>' : ''}
+    `;
+}
+
+// Helper: Safely Display Climate
+function displaySafeClimate(cData, wData) {
+    const el = document.getElementById('climateData');
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="flex justify-between"><span>Avg Temperature:</span><span class="font-semibold">${cData.averageTemperature || 'N/A'}°C</span></div>
+      <div class="flex justify-between"><span>Annual Rainfall:</span><span class="font-semibold">${cData.annualRainfall || wData.rainfall || 'N/A'} mm</span></div>
+      <div class="flex justify-between"><span>Current Weather:</span><span class="font-semibold">${wData.currentTemp || '-'}°C, ${wData.humidity || '-'}% hum</span></div>
+      <div class="flex justify-between"><span>Data Source:</span><span class="font-semibold">${cData.dataPoints ? 'Historical (20yr)' : 'Live Estimate'}</span></div>
+      ${cData.isFallback ? '<div class="text-xs text-yellow-600 mt-1">⚠️ Using regional averages</div>' : ''}
+    `;
 }
 
 async function fetchSoilData(lat, lng) {
@@ -4019,6 +4049,7 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
 
