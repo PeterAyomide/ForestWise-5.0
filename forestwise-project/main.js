@@ -3270,96 +3270,115 @@ function showWikiModal(species) {
 
 // ===== SETUP DIRECT EVENT LISTENERS =====
 function setupDirectEventListeners() {
-  console.log('🔗 Setting up direct event listeners...');
-  
-  // Direct listener for Recommend Trees button
-  const recommendBtn = document.getElementById('recommendBtn');
-  if (recommendBtn) {
-    recommendBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      handleRecommendation();
+  // Navigation: Menu toggle
+  const menuToggle = document.querySelector('.menu-toggle');
+  const navMenu = document.querySelector('.nav-menu');
+  if (menuToggle && navMenu) {
+    menuToggle.addEventListener('click', () => {
+      navMenu.classList.toggle('active');
+      menuToggle.classList.toggle('active');
     });
   }
 
-  // ✅ DELEGATED: Restoration goal chips
-document.getElementById('recommendation-page').addEventListener('click', function(e) {
-  const chip = e.target.closest('#goalChips .chip');
-  if (chip) {
-    e.preventDefault();
-    chip.classList.toggle('active');
-  }
-});
+  // Navigation: Close menu on link click (mobile)
+  document.querySelectorAll('.nav-menu a').forEach(link => {
+    link.addEventListener('click', () => {
+      navMenu.classList.remove('active');
+      menuToggle.classList.remove('active');
+    });
+  });
 
-// ✅ DELEGATED: Soil Health page interactions (Next/Prev + Assessment Options)
-document.getElementById('soil-health-page').addEventListener('click', function(e) {
-  // Handle Next/Prev buttons
-  if (e.target.matches('.next-step')) {
-    e.preventDefault();
-    goToNextStep();
-    return;
-  }
-  if (e.target.matches('.prev-step')) {
-    e.preventDefault();
-    goToPrevStep();
-    return;
+  // Restart Assessment Button
+  const restartBtn = document.getElementById('restartAssessmentBtn');
+  if (restartBtn) {
+    restartBtn.addEventListener('click', restartAssessment);
   }
 
-  // Handle Assessment Options
-  const option = e.target.closest('.assessment-option');
-  if (option) {
-    e.preventDefault();
-    const radio = option.querySelector('input[type="radio"]');
-    const parent = option.closest('.assessment-question');
-    if (parent) {
-      parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
-    }
-    option.classList.add('selected');
-    if (radio) {
-      radio.checked = true;
-      radio.dispatchEvent(new Event('change'));
-    }
-    setTimeout(() => {
-      if (document.getElementById('soilHealthRadar')) updateRadarChart();
-    }, 100);
-    return;
+  // Recommendation: Regenerate Button
+  const regenBtn = document.getElementById('regenerateBtn');
+  if (regenBtn) {
+    regenBtn.addEventListener('click', regenerateRecommendation);
   }
-});
-  
-  // Direct listener for Detect Soil Data button
-  const detectSoilBtn = document.getElementById('detectSoilData');
-  if (detectSoilBtn) {
-    detectSoilBtn.addEventListener('click', function(e) {
+
+  // Recommendation: Copy to Clipboard
+  const copyBtn = document.getElementById('copyRecommendation');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', copyRecommendationToClipboard);
+  }
+
+  // Soil Health Form Submission (if you keep it as form)
+  const soilForm = document.getElementById('soilHealthForm');
+  if (soilForm) {
+    soilForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      e.stopPropagation();
-      detectSoilAndClimateData();
+      // Usually handled by Next button, but kept for safety
     });
   }
-  
-  // Direct listener for Satellite Scan button
-  const analyzeHealthBtn = document.getElementById('analyzeHealthBtn');
-  if (analyzeHealthBtn) {
-    analyzeHealthBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (userLocation) {
-        analyzeForestHealth(userLocation.latitude, userLocation.longitude);
-      } else {
-        showNotification("Please 'Detect Location' first.", "warning");
+
+  // === DELEGATED EVENT LISTENERS (DYNAMIC CONTENT SAFE) ===
+
+  // 🎯 Restoration Goal Chips (Recommendation Page)
+  const recommendationPage = document.getElementById('recommendation-page');
+  if (recommendationPage) {
+    recommendationPage.addEventListener('click', function(e) {
+      const chip = e.target.closest('#goalChips .chip');
+      if (chip) {
+        e.preventDefault();
+        chip.classList.toggle('active');
       }
     });
   }
-  
-  // Direct listener for project type options
-  document.querySelectorAll('.project-type-option').forEach(option => {
-    option.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      document.querySelectorAll('.project-type-option').forEach(opt => opt.classList.remove('selected'));
-      this.classList.add('selected');
+
+  // 🌱 Soil Health Page Interactions (Next/Prev + Assessment Options)
+  const soilHealthPage = document.getElementById('soil-health-page');
+  if (soilHealthPage) {
+    soilHealthPage.addEventListener('click', function(e) {
+      // Next Step
+      if (e.target.matches('.next-step')) {
+        e.preventDefault();
+        goToNextStep();
+        return;
+      }
+
+      // Prev Step
+      if (e.target.matches('.prev-step')) {
+        e.preventDefault();
+        goToPrevStep();
+        return;
+      }
+
+      // Assessment Option Selection
+      const option = e.target.closest('.assessment-option');
+      if (option) {
+        e.preventDefault();
+        const radio = option.querySelector('input[type="radio"]');
+        const parentQuestion = option.closest('.assessment-question');
+        
+        // Deselect siblings
+        if (parentQuestion) {
+          parentQuestion.querySelectorAll('.assessment-option').forEach(opt => {
+            opt.classList.remove('selected');
+          });
+        }
+
+        // Select current
+        option.classList.add('selected');
+        if (radio) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        // Update radar chart after UI update
+        setTimeout(() => {
+          if (document.getElementById('soilHealthRadar')) {
+            updateRadarChart();
+          }
+        }, 50);
+        return;
+      }
     });
-  });
-  
+  }
+
   console.log('✅ Direct event listeners setup complete');
 }
 
@@ -3980,5 +3999,6 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
