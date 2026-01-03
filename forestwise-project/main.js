@@ -3270,9 +3270,12 @@ function showWikiModal(species) {
 
 // ===== SETUP DIRECT EVENT LISTENERS =====
 function setupDirectEventListeners() {
-  // Navigation: Menu toggle
+  console.log('🔧 Setting up direct event listeners...');
+
+  // 1. Navigation: Menu toggle
   const menuToggle = document.querySelector('.menu-toggle');
   const navMenu = document.querySelector('.nav-menu');
+  
   if (menuToggle && navMenu) {
     menuToggle.addEventListener('click', () => {
       navMenu.classList.toggle('active');
@@ -3280,44 +3283,44 @@ function setupDirectEventListeners() {
     });
   }
 
-  // Navigation: Close menu on link click (mobile)
-  document.querySelectorAll('.nav-menu a').forEach(link => {
-    link.addEventListener('click', () => {
-      navMenu.classList.remove('active');
-      menuToggle.classList.remove('active');
+  // 2. Navigation: Close menu on link click (mobile)
+  const menuLinks = document.querySelectorAll('.nav-menu a');
+  if (menuLinks.length > 0) {
+    menuLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (navMenu) navMenu.classList.remove('active');
+        if (menuToggle) menuToggle.classList.remove('active');
+      });
     });
-  });
+  }
 
-  // Restart Assessment Button
+  // 3. Restart Assessment Button
   const restartBtn = document.getElementById('restartAssessmentBtn');
   if (restartBtn) {
     restartBtn.addEventListener('click', restartAssessment);
   }
 
-  // Recommendation: Regenerate Button
+  // 4. Recommendation: Regenerate Button
   const regenBtn = document.getElementById('regenerateBtn');
   if (regenBtn) {
     regenBtn.addEventListener('click', regenerateRecommendation);
   }
 
-  // Recommendation: Copy to Clipboard
+  // 5. Recommendation: Copy to Clipboard
   const copyBtn = document.getElementById('copyRecommendation');
   if (copyBtn) {
     copyBtn.addEventListener('click', copyRecommendationToClipboard);
   }
 
-  // Soil Health Form Submission (if you keep it as form)
+  // 6. Soil Health Form Submission
   const soilForm = document.getElementById('soilHealthForm');
   if (soilForm) {
     soilForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      // Usually handled by Next button, but kept for safety
     });
   }
 
-  // === DELEGATED EVENT LISTENERS (DYNAMIC CONTENT SAFE) ===
-
-  // 🎯 Restoration Goal Chips (Recommendation Page)
+  // 7. Restoration Goal Chips (Recommendation Page)
   const recommendationPage = document.getElementById('recommendation-page');
   if (recommendationPage) {
     recommendationPage.addEventListener('click', function(e) {
@@ -3329,10 +3332,8 @@ function setupDirectEventListeners() {
     });
   }
 
-  // 🌱 Soil Health Page Interactions (Next/Prev + Assessment Options)
-  // ✅ FIX: Added safety check to prevent app crash
+  // 8. CRITICAL FIX: Soil Health Page Interactions (Safe Wrap)
   const soilHealthPage = document.getElementById('soil-health-page');
-  
   if (soilHealthPage) {
     soilHealthPage.addEventListener('click', function(e) {
       // Handle Next Step
@@ -3341,41 +3342,49 @@ function setupDirectEventListeners() {
         goToNextStep();
         return;
       }
-    
+
       // Handle Prev Step
       if (e.target.matches('.prev-step')) {
         e.preventDefault();
         goToPrevStep();
         return;
       }
-    
+
       // Handle Assessment Options
       const option = e.target.closest('.assessment-option');
       if (option) {
         e.preventDefault();
         const radio = option.querySelector('input[type="radio"]');
         const parent = option.closest('.assessment-question');
+        
         if (parent) {
           parent.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
         }
+        
         option.classList.add('selected');
+        
         if (radio) {
           radio.checked = true;
-          radio.dispatchEvent(new Event('change', { bubbles: true }));
+          // Trigger change event manually if needed
+          const event = new Event('change', { bubbles: true });
+          radio.dispatchEvent(event);
         }
-        // Safe chart update
+        
+        // Update radar chart safely
         setTimeout(() => {
-          const radarCanvas = document.getElementById('soilHealthRadar');
-          if(radarCanvas && typeof updateRadarChart === 'function') {
-             updateRadarChart();
+          if (document.getElementById('soilHealthRadar') && typeof updateRadarChart === 'function') {
+            updateRadarChart();
           }
         }, 100);
         return;
       }
     });
   } else {
-    console.warn("Soil Health Page element not found - skipping listeners");
+    console.warn('⚠️ Notice: soil-health-page element not found. Skipping listeners for this section.');
   }
+
+  console.log('✅ Direct event listeners setup complete');
+}
 
 // ===== NAVIGATION FUNCTIONS =====
 function initializeNavigation() {
@@ -3994,6 +4003,7 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
 
