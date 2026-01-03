@@ -286,8 +286,7 @@ function initSoilHealthAssessment() {
   console.log('✅ Soil health assessment state ready');
 }
 
-// ===== ROBUST DATA DETECTION FUNCTION =====
-// ===== ROBUST DATA DETECTION FUNCTION (Safe Mode) =====
+// REPLACE YOUR EXISTING detectSoilAndClimateData FUNCTION WITH THIS:
 async function detectSoilAndClimateData() {
   // 1. Safety Check
   if (!userLocation) {
@@ -312,41 +311,35 @@ async function detectSoilAndClimateData() {
     updateApiStatus('weather', 'loading');
     updateApiStatus('climate', 'loading');
 
-    // 4. Fetch Data (Individually Protected)
-    // We fetch them in parallel. Errors inside 'fetchXXX' are already caught and return fallbacks.
-    const [soilData, climateData, weatherData] = await Promise.all([
-      fetchSoilData(userLocation.latitude, userLocation.longitude),
-      fetchClimateData(userLocation.latitude, userLocation.longitude),
-      fetchWeatherData(userLocation.latitude, userLocation.longitude)
-    ]);
+    // 4. Fetch Data SAFELY (One failure won't kill the others)
+    console.log("Starting independent fetches...");
+    
+    // We fetch independently and catch errors immediately so other requests survive
+    const soilData = await fetchSoilData(userLocation.latitude, userLocation.longitude)
+        .catch(e => { console.warn("Soil failed", e); return getFallbackSoilData(userLocation.latitude, userLocation.longitude); });
+        
+    const climateData = await fetchClimateData(userLocation.latitude, userLocation.longitude)
+        .catch(e => { console.warn("Climate failed", e); return getFallbackClimateData(userLocation.latitude, userLocation.longitude); });
+        
+    // THIS WAS THE CRASH: fetchWeatherData didn't exist. Now it calls the new function below.
+    const weatherData = await fetchWeatherData(userLocation.latitude, userLocation.longitude)
+        .catch(e => { console.warn("Weather failed", e); return getFallbackWeatherData(userLocation.latitude, userLocation.longitude); });
 
-    // 5. Intelligent Data Merging (Protected)
+    // 5. Intelligent Data Merging
     // Overwrite current weather rainfall with historical climate data if available
     if (climateData && typeof climateData.annualRainfall === 'number') {
         if (weatherData) {
-            console.log(`Overwriting weather rainfall (${weatherData.rainfall}mm) with climate average (${climateData.annualRainfall}mm)`);
             weatherData.rainfall = climateData.annualRainfall;
         }
     }
 
-    // 6. Display Data (Decoupled to prevent one error hiding everything)
-    // We try to display soil. If it crashes, we catch it so Climate still shows.
-    try {
-        displaySafeSoil(soilData);
-        updateApiStatus('soil', 'connected');
-    } catch (e) { 
-        console.error("Soil Display Error", e); 
-        updateApiStatus('soil', 'disconnected'); 
-    }
+    // 6. Display Data
+    displaySafeSoil(soilData);
+    updateApiStatus('soil', 'connected');
 
-    try {
-        displaySafeClimate(climateData, weatherData);
-        updateApiStatus('weather', 'connected');
-        updateApiStatus('climate', 'connected');
-    } catch (e) { 
-        console.error("Climate Display Error", e); 
-        updateApiStatus('climate', 'disconnected'); 
-    }
+    displaySafeClimate(climateData, weatherData);
+    updateApiStatus('weather', 'connected');
+    updateApiStatus('climate', 'connected');
     
     // 7. Success State
     if (autoDetectedData) autoDetectedData.classList.remove('hidden');
@@ -364,45 +357,25 @@ async function detectSoilAndClimateData() {
   }
 }
 
-// === NEW HELPER FUNCTIONS (Paste these below the function above) ===
-
-// Helper 1: Safely Display Soil (Prevents Null Crashes)
-function displaySafeSoil(data) {
-    const el = document.getElementById('soilProperties');
-    if (!el) return;
+// PASTE THIS NEW FUNCTION INTO YOUR CODE
+async function fetchWeatherData(lat, lng) {
+  try {
+    // We reuse your existing getWeatherData logic from later in the file
+    // Note: getWeatherData is defined at the bottom of your file, which is fine in JS
+    const data = await getWeatherData(lat, lng);
     
-    // Safety: Ensure data exists and is a number before fixing decimal
-    const safeFix = (val) => (val !== null && val !== undefined && typeof val === 'number') ? val.toFixed(1) : 'N/A';
-    
-    el.innerHTML = `
-      <div class="flex justify-between"><span>Clay Content:</span><span class="font-semibold">${safeFix(data.clay)}%</span></div>
-      <div class="flex justify-between"><span>Sand Content:</span><span class="font-semibold">${safeFix(data.sand)}%</span></div>
-      <div class="flex justify-between"><span>Silt Content:</span><span class="font-semibold">${safeFix(data.silt)}%</span></div>
-      <div class="flex justify-between"><span>Soil pH:</span><span class="font-semibold">${safeFix(data.phh2o)}</span></div>
-      <div class="flex justify-between"><span>Organic Carbon:</span><span class="font-semibold">${safeFix(data.soc)}%</span></div>
-      ${data.isFallback ? '<div class="text-xs text-yellow-600 mt-1">⚠️ Using estimated data</div>' : ''}
-    `;
-}
-
-// Helper 2: Safely Display Climate
-function displaySafeClimate(cData, wData) {
-    const el = document.getElementById('climateData');
-    if (!el) return;
-
-    // Safety checks for objects
-    const avgTemp = cData ? cData.averageTemperature : 'N/A';
-    const rain = (cData && cData.annualRainfall) ? cData.annualRainfall : (wData ? wData.rainfall : 'N/A');
-    const currTemp = wData ? wData.currentTemp : '-';
-    const humid = wData ? wData.humidity : '-';
-    const isHist = cData && cData.dataPoints;
-
-    el.innerHTML = `
-      <div class="flex justify-between"><span>Avg Temperature:</span><span class="font-semibold">${avgTemp}°C</span></div>
-      <div class="flex justify-between"><span>Annual Rainfall:</span><span class="font-semibold">${rain} mm</span></div>
-      <div class="flex justify-between"><span>Current Weather:</span><span class="font-semibold">${currTemp}°C, ${humid}% hum</span></div>
-      <div class="flex justify-between"><span>Data Source:</span><span class="font-semibold">${isHist ? 'Historical (20yr)' : 'Live Estimate'}</span></div>
-      ${(cData && cData.isFallback) ? '<div class="text-xs text-yellow-600 mt-1">⚠️ Using regional averages</div>' : ''}
-    `;
+    // We map the results to match what displaySafeClimate expects
+    return {
+      currentTemp: data.temperature, // Maps 'temperature' to 'currentTemp'
+      humidity: data.humidity,
+      rainfall: data.rainfall, 
+      description: data.description,
+      isFallback: false
+    };
+  } catch (error) {
+    console.error('Weather fetch failed:', error);
+    return getFallbackWeatherData(lat, lng);
+  }
 }
 
 async function fetchSoilData(lat, lng) {
@@ -4065,6 +4038,7 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
 
