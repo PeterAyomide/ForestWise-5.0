@@ -287,6 +287,7 @@ function initSoilHealthAssessment() {
 }
 
 // REPLACE YOUR EXISTING detectSoilAndClimateData FUNCTION WITH THIS:
+// REPLACE YOUR EXISTING detectSoilAndClimateData FUNCTION WITH THIS ONE BLOCK
 async function detectSoilAndClimateData() {
   // 1. Safety Check
   if (!userLocation) {
@@ -311,35 +312,69 @@ async function detectSoilAndClimateData() {
     updateApiStatus('weather', 'loading');
     updateApiStatus('climate', 'loading');
 
-    // 4. Fetch Data SAFELY (One failure won't kill the others)
+    // 4. Fetch Data SAFELY (Independent fetches)
     console.log("Starting independent fetches...");
     
-    // We fetch independently and catch errors immediately so other requests survive
+    // A. SOIL DATA
     const soilData = await fetchSoilData(userLocation.latitude, userLocation.longitude)
-        .catch(e => { console.warn("Soil failed", e); return getFallbackSoilData(userLocation.latitude, userLocation.longitude); });
+        .catch(e => {
+            console.warn("Soil API failed, using fallback", e); 
+            return getFallbackSoilData(userLocation.latitude, userLocation.longitude); 
+        });
         
+    // B. CLIMATE DATA
     const climateData = await fetchClimateData(userLocation.latitude, userLocation.longitude)
-        .catch(e => { console.warn("Climate failed", e); return getFallbackClimateData(userLocation.latitude, userLocation.longitude); });
+        .catch(e => {
+            console.warn("Climate API failed, using fallback", e); 
+            return getFallbackClimateData(userLocation.latitude, userLocation.longitude); 
+        });
         
-    // THIS WAS THE CRASH: fetchWeatherData didn't exist. Now it calls the new function below.
-    const weatherData = await fetchWeatherData(userLocation.latitude, userLocation.longitude)
-        .catch(e => { console.warn("Weather failed", e); return getFallbackWeatherData(userLocation.latitude, userLocation.longitude); });
+    // C. WEATHER DATA (Using your EXISTING getWeatherData function directly)
+    // We map the result here to avoid needing a separate wrapper function
+    let weatherData = null;
+    try {
+        const rawWeather = await getWeatherData(userLocation.latitude, userLocation.longitude);
+        weatherData = {
+            currentTemp: rawWeather.temperature,
+            humidity: rawWeather.humidity,
+            rainfall: rawWeather.rainfall,
+            description: rawWeather.description,
+            isFallback: false // Assuming getWeatherData succeeded
+        };
+    } catch (e) {
+        console.warn("Weather API failed, using fallback", e);
+        weatherData = getFallbackWeatherData(userLocation.latitude, userLocation.longitude);
+    }
 
     // 5. Intelligent Data Merging
-    // Overwrite current weather rainfall with historical climate data if available
+    // Use historical climate rainfall if available (it's more accurate than live weather rain)
     if (climateData && typeof climateData.annualRainfall === 'number') {
         if (weatherData) {
             weatherData.rainfall = climateData.annualRainfall;
         }
     }
 
-    // 6. Display Data
-    displaySafeSoil(soilData);
-    updateApiStatus('soil', 'connected');
+    // 6. Display Data (Wrapped in try-catch to prevent UI crashes)
+    try {
+        if (typeof displaySafeSoil === 'function') {
+            displaySafeSoil(soilData);
+        } else {
+            // Fallback display if helper is missing
+            displayDetectedData(soilData, climateData, weatherData); 
+        }
+        updateApiStatus('soil', 'connected');
+    } catch(e) { console.error("Soil Display Error", e); }
 
-    displaySafeClimate(climateData, weatherData);
-    updateApiStatus('weather', 'connected');
-    updateApiStatus('climate', 'connected');
+    try {
+        if (typeof displaySafeClimate === 'function') {
+            displaySafeClimate(climateData, weatherData);
+        } else {
+             // Fallback display if helper is missing
+             // Note: displayDetectedData handles both soil and climate
+        }
+        updateApiStatus('weather', 'connected');
+        updateApiStatus('climate', 'connected');
+    } catch(e) { console.error("Climate Display Error", e); }
     
     // 7. Success State
     if (autoDetectedData) autoDetectedData.classList.remove('hidden');
@@ -4038,6 +4073,7 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
 
