@@ -287,6 +287,7 @@ function initSoilHealthAssessment() {
 }
 
 // ===== ROBUST DATA DETECTION FUNCTION =====
+// ===== ROBUST DATA DETECTION FUNCTION (Safe Mode) =====
 async function detectSoilAndClimateData() {
   // 1. Safety Check
   if (!userLocation) {
@@ -312,7 +313,7 @@ async function detectSoilAndClimateData() {
     updateApiStatus('climate', 'loading');
 
     // 4. Fetch Data (Individually Protected)
-    // We fetch them in parallel, but errors inside 'fetchXXX' are already caught and return fallbacks.
+    // We fetch them in parallel. Errors inside 'fetchXXX' are already caught and return fallbacks.
     const [soilData, climateData, weatherData] = await Promise.all([
       fetchSoilData(userLocation.latitude, userLocation.longitude),
       fetchClimateData(userLocation.latitude, userLocation.longitude),
@@ -329,17 +330,23 @@ async function detectSoilAndClimateData() {
     }
 
     // 6. Display Data (Decoupled to prevent one error hiding everything)
-    // We try to display soil. If it fails, we catch it so Climate still shows.
+    // We try to display soil. If it crashes, we catch it so Climate still shows.
     try {
         displaySafeSoil(soilData);
         updateApiStatus('soil', 'connected');
-    } catch (e) { console.error("Soil Display Error", e); updateApiStatus('soil', 'disconnected'); }
+    } catch (e) { 
+        console.error("Soil Display Error", e); 
+        updateApiStatus('soil', 'disconnected'); 
+    }
 
     try {
         displaySafeClimate(climateData, weatherData);
         updateApiStatus('weather', 'connected');
         updateApiStatus('climate', 'connected');
-    } catch (e) { console.error("Climate Display Error", e); updateApiStatus('climate', 'disconnected'); }
+    } catch (e) { 
+        console.error("Climate Display Error", e); 
+        updateApiStatus('climate', 'disconnected'); 
+    }
     
     // 7. Success State
     if (autoDetectedData) autoDetectedData.classList.remove('hidden');
@@ -357,12 +364,14 @@ async function detectSoilAndClimateData() {
   }
 }
 
-// Helper: Safely Display Soil (Prevents Null Crashes)
+// === NEW HELPER FUNCTIONS (Paste these below the function above) ===
+
+// Helper 1: Safely Display Soil (Prevents Null Crashes)
 function displaySafeSoil(data) {
     const el = document.getElementById('soilProperties');
     if (!el) return;
     
-    // Safety: Ensure data exists, otherwise use N/A
+    // Safety: Ensure data exists and is a number before fixing decimal
     const safeFix = (val) => (val !== null && val !== undefined && typeof val === 'number') ? val.toFixed(1) : 'N/A';
     
     el.innerHTML = `
@@ -375,17 +384,24 @@ function displaySafeSoil(data) {
     `;
 }
 
-// Helper: Safely Display Climate
+// Helper 2: Safely Display Climate
 function displaySafeClimate(cData, wData) {
     const el = document.getElementById('climateData');
     if (!el) return;
 
+    // Safety checks for objects
+    const avgTemp = cData ? cData.averageTemperature : 'N/A';
+    const rain = (cData && cData.annualRainfall) ? cData.annualRainfall : (wData ? wData.rainfall : 'N/A');
+    const currTemp = wData ? wData.currentTemp : '-';
+    const humid = wData ? wData.humidity : '-';
+    const isHist = cData && cData.dataPoints;
+
     el.innerHTML = `
-      <div class="flex justify-between"><span>Avg Temperature:</span><span class="font-semibold">${cData.averageTemperature || 'N/A'}°C</span></div>
-      <div class="flex justify-between"><span>Annual Rainfall:</span><span class="font-semibold">${cData.annualRainfall || wData.rainfall || 'N/A'} mm</span></div>
-      <div class="flex justify-between"><span>Current Weather:</span><span class="font-semibold">${wData.currentTemp || '-'}°C, ${wData.humidity || '-'}% hum</span></div>
-      <div class="flex justify-between"><span>Data Source:</span><span class="font-semibold">${cData.dataPoints ? 'Historical (20yr)' : 'Live Estimate'}</span></div>
-      ${cData.isFallback ? '<div class="text-xs text-yellow-600 mt-1">⚠️ Using regional averages</div>' : ''}
+      <div class="flex justify-between"><span>Avg Temperature:</span><span class="font-semibold">${avgTemp}°C</span></div>
+      <div class="flex justify-between"><span>Annual Rainfall:</span><span class="font-semibold">${rain} mm</span></div>
+      <div class="flex justify-between"><span>Current Weather:</span><span class="font-semibold">${currTemp}°C, ${humid}% hum</span></div>
+      <div class="flex justify-between"><span>Data Source:</span><span class="font-semibold">${isHist ? 'Historical (20yr)' : 'Live Estimate'}</span></div>
+      ${(cData && cData.isFallback) ? '<div class="text-xs text-yellow-600 mt-1">⚠️ Using regional averages</div>' : ''}
     `;
 }
 
@@ -4049,6 +4065,7 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
 
