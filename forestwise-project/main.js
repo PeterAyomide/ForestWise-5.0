@@ -147,6 +147,20 @@ async function generateOnyxDiagnosis(assessmentData) {
     </div>
   `;
 
+  // --- FIX: TRANSLATE SCORES TO TEXT TO PREVENT AI CONFUSION ---
+  // The AI interprets "Erosion Risk: 5/5" as HIGH RISK, even if 5 means "Good".
+  // We must send descriptive text instead.
+  
+  const soilDesc = assessmentData.scores.soilQuality >= 4 ? "Rich, Healthy Soil" : 
+                   (assessmentData.scores.soilQuality <= 2 ? "Poor, Compact/Hard Soil" : "Moderate/Sandy Soil");
+
+  const erosionDesc = assessmentData.scores.erosionControl >= 4 ? "STABLE LAND (No Visible Erosion)" : 
+                      "ACTIVE EROSION OBSERVED (Runoff visible)";
+
+  const vegDesc = assessmentData.scores.vegetationCover >= 4 ? "Dense Vegetation" : 
+                  (assessmentData.scores.vegetationCover <= 2 ? "Bare Ground / Exposed Soil" : "Patchy Growth");
+  // -----------------------------------------------------------
+
   // The "Sophisticated" Prompt
   const prompt = `
     ACT AS: Senior Forestry Consultant & Soil Scientist.
@@ -155,14 +169,14 @@ async function generateOnyxDiagnosis(assessmentData) {
     SITE DATA:
     - Location: ${assessmentData.location ? `${assessmentData.location.latitude.toFixed(4)}, ${assessmentData.location.longitude.toFixed(4)}` : 'User Location (Unknown)'}
     - Satellite Analysis (NDVI): ${window.satelliteData ? window.satelliteData.status : "Not Available (Rely on visual)"}
-    - Visual Soil Quality: ${assessmentData.scores.soilQuality}/5 (1=Poor, 5=Rich)
-    - Erosion Risk: ${assessmentData.scores.erosionControl}/5 (1=Severe, 5=None)
-    - Vegetation Density: ${assessmentData.scores.vegetationCover}/5
+    - Visual Soil Quality: ${soilDesc} (Score: ${assessmentData.scores.soilQuality}/5)
+    - Erosion Status: ${erosionDesc}
+    - Vegetation Density: ${vegDesc}
     - Annual Rainfall: ${rainValue}mm
     
     OUTPUT FORMAT (Markdown):
     1. **Technical Diagnosis**: A strict 2-sentence assessment of the soil's limiting factors.
-    2. **The Risk Factor**: Identify the #1 thing that will kill trees here.
+    2. **The Risk Factor**: Identify the #1 thing that will kill trees here based on the data provided.
     3. **Prescription**: 3 specific, actionable steps to prepare this land BEFORE planting.
     4. **Recommended Pioneer Species**: Name 3 specific Nigerian tree species that will survive these exact conditions.
     
@@ -4003,6 +4017,7 @@ window.addEventListener('resize', () => {
   adjustSlideshowForSmallPhones();
   adjustToolLayout();
 });
+
 
 
 
