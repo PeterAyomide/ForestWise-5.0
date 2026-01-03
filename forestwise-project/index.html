@@ -739,15 +739,15 @@
       .dark .chat-input-area { background: #111827; border-top: 1px solid rgba(255,255,255,0.1); }
     }
 
-    /* FIX FOR PARTICLES */
+    /* FIX FOR PARTICLES - LOWER Z-INDEX TO 0 */
     #particlesContainer {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 1;
-      pointer-events: none;
+      z-index: 0; /* Changed from 1 to 0 to sit behind text */
+      pointer-events: none; /* Crucial: lets clicks pass through */
     }
 
     .particle {
@@ -3419,6 +3419,7 @@ html {
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
